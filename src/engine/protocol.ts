@@ -88,6 +88,8 @@ export interface EngineModel {
   glow: number;
   rays: number;
   opacity: number;
+  /** 0 hidden (dissolved) .. 1 fully there; the model animates towards it */
+  reveal: number;
 }
 
 /** a glTF file, fetched on the main thread: JSON, buffers and images (structured-cloneable) */

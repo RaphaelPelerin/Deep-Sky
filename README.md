@@ -83,6 +83,23 @@ createDeepSky(document.body, {
 | `glow` | `1` | Bloom |
 | `rays` | `0.6` | Light shafts |
 | `opacity` | `1` | |
+| `reveal` | `1` | How much of it has materialized, `0` to `1`. Changes animate (it dissolves the way it appears); `0` keeps it hidden but ready |
+
+A model that is removed dissolves away, and replacing one cross-fades between them.
+
+**Reveal it with the scroll.** Pass the model from the start with `reveal: 0`: its file is downloaded and its shaders compiled in the background while it stays invisible, so it appears without a hitch. Then drive `reveal` from the scroll:
+
+```js
+const model = { src: '/models/ship.glb', x: 0.7 };
+const sky = createDeepSky(document.body, { models: { ...model, reveal: 0 } });
+
+addEventListener('scroll', () => {
+  const box = section.getBoundingClientRect();
+  const seen = Math.min(innerHeight, box.bottom) - Math.max(0, box.top);
+  const reveal = Math.round(Math.min(1, Math.max(0, seen / innerHeight)) * 20) / 20;
+  sky.set({ models: { ...model, reveal } }); // steps of 5%: the sky eases between them
+}, { passive: true });
+```
 
 The 3D layer needs WebGL 2. It renders in the worker with the rest, and the adaptive quality lowers its resolution first when frames get slow. Draco or meshopt compressed files aren't supported (`onModelError` tells you); animations and skins show their rest pose.
 

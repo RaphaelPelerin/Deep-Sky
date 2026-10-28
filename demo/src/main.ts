@@ -81,7 +81,9 @@ let state = initialState();
 /** a shared link with a model shows it everywhere */
 let pinned = state.models.length > 0;
 if (!state.models.length) state.models = [defaultModel()];
-/** the 3D section is on screen */
+/** how much of the 3D section fills the screen, 0–1: the model materializes with the scroll */
+let reveal = 0;
+/** the 3D section is (partly) on screen */
 let showcase = false;
 /** the visitor played with the model: the snippet includes it */
 let touched = pinned;
@@ -111,7 +113,8 @@ function soloed(s: ResolvedOptions, layer: LayerKey): ResolvedOptions {
 
 const liveOptions = (): DeepSkyOptions => ({
   ...(solo ? soloed(state, solo) : state),
-  models: showcase || pinned ? state.models : [],
+  // always there, hidden until the scroll reveals it: ready ahead of time, no hitch
+  models: state.models.map((m) => ({ ...m, reveal: pinned ? 1 : reveal })),
   worker: !mainThread,
   onStats: hudOn ? onStats : undefined,
   onModelError: (_, error) => toast(`Model: ${error}`),
@@ -593,14 +596,23 @@ addEventListener('drop', (e) => {
 });
 const showcaseEl = $('#models');
 
-// the model materializes when the section comes into view
-new IntersectionObserver(
-  ([entry]) => {
-    if (showcase === entry.isIntersecting) return;
-    showcase = entry.isIntersecting;
-    sky.set(liveOptions(), true);
-  },
-  { threshold: 0.35 },
-).observe(showcaseEl);
+// the model materializes as the section scrolls in, and dissolves as it scrolls out
+let revealFrame = 0;
+function trackReveal() {
+  revealFrame = 0;
+  const r = showcaseEl.getBoundingClientRect();
+  const coverage = Math.max(0, Math.min(innerHeight, r.bottom) - Math.max(0, r.top)) / innerHeight;
+  const t = Math.min(1, Math.max(0, (coverage - 0.3) / 0.45));
+  // steps of 5%: the sky eases between them, without an update per scroll event
+  const next = Math.round(t * t * (3 - 2 * t) * 20) / 20;
+  showcase = next > 0;
+  if (next === reveal) return;
+  reveal = next;
+  sky.set(liveOptions(), true);
+}
+const onRevealScroll = () => (revealFrame ||= requestAnimationFrame(trackReveal));
+addEventListener('scroll', onRevealScroll, { passive: true });
+addEventListener('resize', onRevealScroll, { passive: true });
+trackReveal();
 
 apply();

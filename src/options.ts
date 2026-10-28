@@ -80,6 +80,7 @@ export const modelDefaults: Omit<ResolvedModel, 'src'> = {
   glow: 1,
   rays: 0.6,
   opacity: 1,
+  reveal: 1,
 };
 
 function resolveModels(value: DeepSkyOptions['models']): ResolvedModel[] {
@@ -300,6 +301,7 @@ export function toEngineConfig(r: ResolvedOptions): EngineConfig {
       glow: clamp(m.glow, 0, 3),
       rays: clamp(m.rays, 0, 3),
       opacity: clamp(m.opacity, 0, 1),
+      reveal: clamp(m.reveal, 0, 1),
     })),
     click: r.click,
     scale: clamp(r.quality.scale, 0.1, 2),

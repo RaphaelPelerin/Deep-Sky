@@ -175,6 +175,12 @@ export interface ModelOptions {
   rays?: number;
   /** 0–1 (default 1) */
   opacity?: number;
+  /**
+   * How much of the model has materialized, 0–1 (default 1). Changes animate: it dissolves
+   * through the same burning edge it appears with. Drive it from the scroll, or set 0 to hide
+   * a model while keeping it ready (no download nor shader compile when it comes back).
+   */
+  reveal?: number;
 }
 
 export interface QualityOptions {

@@ -44,6 +44,15 @@ describe('models options', () => {
     expect(m.morph).toBe(2);
     expect(m.color).toEqual([1, 0, 0]);
   });
+
+  it('reveals models fully by default, and clamps reveal', () => {
+    const config = (reveal?: number) =>
+      toEngineConfig(normalizeOptions({ models: { src: 'orb', reveal } })).models[0].reveal;
+    expect(config()).toBe(1);
+    expect(config(0)).toBe(0);
+    expect(config(4)).toBe(1);
+    expect(config(-1)).toBe(0);
+  });
 });
 
 describe('geometry', () => {

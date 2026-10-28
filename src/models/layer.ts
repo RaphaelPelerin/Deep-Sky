@@ -34,8 +34,9 @@ const FOV = (30 * Math.PI) / 180;
 const TAN = Math.tan(FOV / 2);
 const DEPTH = 8;
 const LIGHT_DEPTH = DEPTH - 2.6;
-/** seconds to materialize */
+/** seconds to materialize, and to dissolve away */
 const APPEAR = 1.8;
+const VANISH = 0.8;
 
 const MODE = { auto: 0, chrome: 1, glass: 2, hologram: 3, iridescent: 4, wire: 5, nebula: 6 };
 
@@ -94,7 +95,11 @@ interface Targets {
   wide: [Target, Target];
 }
 
-type Program = { p: WebGLProgram; u: (name: string) => WebGLUniformLocation | null };
+type Program = {
+  p: WebGLProgram;
+  shaders: WebGLShader[];
+  u: (name: string) => WebGLUniformLocation | null;
+};
 
 const decode = (c: readonly number[]): RGB => [c[0] * c[0], c[1] * c[1], c[2] * c[2]];
 
@@ -121,10 +126,14 @@ export class ModelLayer implements ModelLayerApi {
   private sky: WebGLTexture | null = null;
   private empty: WebGLVertexArrayObject | null = null;
   private hdr = false;
+  private parallel: { COMPLETION_STATUS_KHR: number } | null = null;
+  private linked = false;
   private targets: Targets | null = null;
   private failed = false;
   private readonly assets = new Map<string, Asset | 'loading' | Error>();
   private instances: Instance[] = [];
+  /** removed models, dissolving away */
+  private leaving: Instance[] = [];
   private readonly seen = new Map<number, number>();
   private w = 1;
   private h = 1;
@@ -140,8 +149,10 @@ export class ModelLayer implements ModelLayerApi {
     if (!this.init()) this.fail('WebGL 2 is not available for the 3D layer');
   }
 
+  /** something is on screen or on its way: hidden models (`reveal: 0`) cost nothing */
   get active() {
-    return !this.failed && this.instances.length > 0;
+    if (this.failed) return false;
+    return [...this.instances, ...this.leaving].some((i) => i.appear > 0 || i.cfg.reveal > 0);
   }
 
   // ---------- setup ----------
@@ -195,27 +206,26 @@ export class ModelLayer implements ModelLayerApi {
     return this.setup();
   }
 
+  /**
+   * Starts compiling without waiting: asking for the status right away would block the thread
+   * (the sky with it) for as long as the driver needs, hundreds of milliseconds on some GPUs.
+   */
   private program(vs: string, fs: string): Program {
     const gl = this.gl!;
-    const compile = (type: number, src: string) => {
+    const shader = (type: number, src: string) => {
       const s = gl.createShader(type)!;
       gl.shaderSource(s, src);
       gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS) && !gl.isContextLost()) {
-        throw new Error(gl.getShaderInfoLog(s) ?? 'shader error');
-      }
       return s;
     };
     const p = gl.createProgram()!;
-    gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
-    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+    const shaders = [shader(gl.VERTEX_SHADER, vs), shader(gl.FRAGMENT_SHADER, fs)];
+    for (const s of shaders) gl.attachShader(p, s);
     gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS) && !gl.isContextLost()) {
-      throw new Error(gl.getProgramInfoLog(p) ?? 'link error');
-    }
     const cache = new Map<string, WebGLUniformLocation | null>();
     return {
       p,
+      shaders,
       u: (name) => {
         if (!cache.has(name)) cache.set(name, gl.getUniformLocation(p, name));
         return cache.get(name)!;
@@ -223,15 +233,20 @@ export class ModelLayer implements ModelLayerApi {
     };
   }
 
-  private setup(): boolean {
+  /** true once every program is linked; with KHR_parallel_shader_compile it never waits */
+  private compiled(): boolean {
+    if (this.linked) return true;
     const gl = this.gl!;
-    try {
-      this.scene = this.program(SCENE_VERT, SCENE_FRAG);
-      this.bright = this.program(POST_VERT, BRIGHT_FRAG);
-      this.blur = this.program(POST_VERT, BLUR_FRAG);
-      this.composite = this.program(POST_VERT, COMPOSITE_FRAG);
-    } catch (e) {
-      console.warn('[deep-sky]', e);
+    const programs = [this.scene, this.bright, this.blur, this.composite];
+    const ext = this.parallel;
+    if (ext && !programs.every(({ p }) => gl.getProgramParameter(p, ext.COMPLETION_STATUS_KHR))) {
+      return false;
+    }
+    for (const { p, shaders } of programs) {
+      if (gl.getProgramParameter(p, gl.LINK_STATUS) || gl.isContextLost()) continue;
+      const log = shaders.map((s) => gl.getShaderInfoLog(s)).join('\n') || gl.getProgramInfoLog(p);
+      console.warn('[deep-sky]', log);
+      this.fail('the 3D shaders did not compile');
       return false;
     }
     gl.useProgram(this.scene.p);
@@ -240,6 +255,18 @@ export class ModelLayer implements ModelLayerApi {
     );
     gl.useProgram(this.composite.p);
     ['uScene', 'uBloom', 'uBloomWide'].forEach((name, i) => gl.uniform1i(this.composite.u(name), i));
+    this.linked = true;
+    return true;
+  }
+
+  private setup(): boolean {
+    const gl = this.gl!;
+    this.parallel = gl.getExtension('KHR_parallel_shader_compile');
+    this.linked = false;
+    this.scene = this.program(SCENE_VERT, SCENE_FRAG);
+    this.bright = this.program(POST_VERT, BRIGHT_FRAG);
+    this.blur = this.program(POST_VERT, BLUR_FRAG);
+    this.composite = this.program(POST_VERT, COMPOSITE_FRAG);
 
     const pixel = (rgba: number[]) => {
       const t = gl.createTexture();
@@ -262,6 +289,7 @@ export class ModelLayer implements ModelLayerApi {
       const old = prev[i];
       if (old && old.cfg.key === cfg.key) {
         old.cfg = cfg;
+        prev[i] = null!;
         return old;
       }
       return {
@@ -277,6 +305,10 @@ export class ModelLayer implements ModelLayerApi {
         hits: [],
       };
     });
+    // models taken away dissolve instead of vanishing (a new shape cross-fades with the old one)
+    for (const old of prev) {
+      if (old && old.appear > 0) this.leaving.push({ ...old, cfg: { ...old.cfg, reveal: 0 } });
+    }
     for (const { key } of models) {
       if (!key.startsWith('shape:') || this.assets.has(key)) continue;
       const meshes = shape(key.slice(6));
@@ -288,6 +320,41 @@ export class ModelLayer implements ModelLayerApi {
         shape: key.slice(6),
         lowPoly: null,
       });
+    }
+    this.warm();
+  }
+
+  /** the surface an instance shows: auto is chrome on built-in shapes */
+  private mode(inst: Instance, asset: Asset) {
+    return inst.cfg.material === MODE.auto && asset.shape ? MODE.chrome : inst.cfg.material;
+  }
+
+  /** what gets drawn: the wireframe of a built-in shape uses its low-poly version */
+  private prims(asset: Asset, mode: number): Prim[] {
+    if (mode !== MODE.wire || !asset.shape) return asset.prims;
+    if (!asset.lowPoly) {
+      const low = shape(asset.shape, true);
+      normalize(low);
+      asset.lowPoly = low.map((mesh) => ({ mesh, geo: null, wire: null }));
+    }
+    return asset.lowPoly;
+  }
+
+  /** GPU uploads ahead of time, so that the first frame of a model doesn't stall */
+  private warm() {
+    if (!this.gl) return;
+    // without parallel compiling, waiting for the shaders is unavoidable: better now than
+    // on the first frame a model shows (a hidden model makes this happen ahead of time)
+    if (!this.parallel) this.compiled();
+    for (const inst of this.instances) {
+      const asset = this.ready(inst.cfg.key);
+      if (!asset) continue;
+      this.textures(asset);
+      const mode = this.mode(inst, asset);
+      for (const prim of this.prims(asset, mode)) {
+        if (mode === MODE.wire) prim.wire ??= this.upload(unweld(prim.mesh));
+        else prim.geo ??= this.upload(prim.mesh);
+      }
     }
   }
 
@@ -321,6 +388,7 @@ export class ModelLayer implements ModelLayerApi {
         shape: null,
         lowPoly: null,
       });
+      this.warm();
       this.onChange?.();
     });
   }
@@ -519,7 +587,28 @@ export class ModelLayer implements ModelLayerApi {
         this.canvas.height = H;
       }
     }
-    const visible = this.instances.filter((i) => this.ready(i.cfg.key));
+    // until the shaders are ready nothing is drawn, and the materializing hasn't started yet
+    if (!this.compiled()) return;
+    const aspect = this.w / this.h;
+    const dt = Number.isNaN(this.last) ? 0 : Math.min(0.1, Math.max(0, f.clock - this.last));
+    this.last = f.clock;
+    this.shockwaves(f, aspect);
+    // each model moves towards its reveal (0 for the ones leaving), one frame at a time
+    for (const inst of [...this.instances, ...this.leaving]) {
+      if (!this.ready(inst.cfg.key)) continue;
+      if (f.animated) this.step(inst, f, dt);
+      const target = inst.cfg.reveal;
+      const tick = Math.min(dt, 1 / 30);
+      inst.appear = !f.animated
+        ? target
+        : inst.appear < target
+          ? Math.min(target, inst.appear + tick / APPEAR)
+          : Math.max(target, inst.appear - tick / VANISH);
+    }
+    this.leaving = this.leaving.filter((i) => i.appear > 0);
+    const visible = [...this.instances, ...this.leaving].filter(
+      (i) => i.appear > 0.001 && this.ready(i.cfg.key),
+    );
     if (!visible.length) {
       if (this.drawn) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -536,10 +625,6 @@ export class ModelLayer implements ModelLayerApi {
       this.fail('the 3D layer has no usable render target');
       return;
     }
-    const aspect = this.w / this.h;
-    const dt = Number.isNaN(this.last) ? 0 : Math.min(0.1, Math.max(0, f.clock - this.last));
-    this.last = f.clock;
-    this.shockwaves(f, aspect);
 
     // ---------- scene ----------
     const s = this.scene;
@@ -574,8 +659,6 @@ export class ModelLayer implements ModelLayerApi {
     for (const inst of visible) {
       const asset = this.ready(inst.cfg.key)!;
       const c = inst.cfg;
-      if (f.animated) this.step(inst, f, dt);
-      inst.appear = f.animated ? Math.min(1, inst.appear + Math.min(dt, 1 / 30) / APPEAR) : 1;
       const appear = inst.appear;
       const size = c.size * 2 * halfH * (1 + inst.pop * 0.12);
       const bob = f.animated ? Math.sin(f.time * 0.9 + inst.phase) * 0.035 * c.float * size : 0;
@@ -591,18 +674,9 @@ export class ModelLayer implements ModelLayerApi {
       );
       bloom = Math.max(bloom, c.glow);
       shafts = Math.max(shafts, c.rays);
-      const mode = c.material === MODE.auto && asset.shape ? MODE.chrome : c.material;
+      const mode = this.mode(inst, asset);
       const textures = this.textures(asset);
-      let prims = asset.prims;
-      if (mode === MODE.wire && asset.shape) {
-        if (!asset.lowPoly) {
-          const low = shape(asset.shape, true);
-          normalize(low);
-          asset.lowPoly = low.map((mesh) => ({ mesh, geo: null, wire: null }));
-        }
-        prims = asset.lowPoly;
-      }
-      for (const prim of prims) {
+      for (const prim of this.prims(asset, mode)) {
         const draw = () => this.drawPrim(prim, inst, mode, model, appear, textures, f);
         const m = prim.mesh.material;
         const translucent =
