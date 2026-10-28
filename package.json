@@ -79,6 +79,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "capture": "node scripts/capture.mjs",
+    "record": "node scripts/record.mjs",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
   "peerDependencies": {

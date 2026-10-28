@@ -354,6 +354,7 @@ npm test             # unit tests
 npm run build        # library → dist/
 npm run build:demo   # site → demo/dist
 npm run capture      # README images and social card (needs a local Chrome)
+npm run record       # 20 s demo video → .capture/deep-sky.mp4
 ```
 
 Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
