@@ -266,6 +266,9 @@ pre {
   line-height: 0.98;
   letter-spacing: -0.048em;
   text-wrap: balance;
+  /* background-clip: text only paints inside the box: room for descenders (y, g) */
+  padding: 0 0.05em 0.14em;
+  margin-bottom: -0.14em;
   background: linear-gradient(180deg, var(--fg) 30%, color-mix(in oklab, var(--fg) 60%, transparent));
   -webkit-background-clip: text;
   background-clip: text;
@@ -273,6 +276,7 @@ pre {
 }
 
 .shine {
+  padding-bottom: 0.14em;
   background: linear-gradient(100deg, #a3c8ff 0%, #cfa9ff 48%, #86f2db 100%);
   -webkit-background-clip: text;
   background-clip: text;
