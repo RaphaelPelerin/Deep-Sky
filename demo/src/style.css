@@ -1186,6 +1186,124 @@ input[type='range']::-moz-range-thumb {
   border-radius: 11px;
 }
 
+/* ---------- 3D showcase: the copy on the left, the model on the right of the sky ---------- */
+
+.models {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+}
+
+.models-copy {
+  max-width: 540px;
+}
+
+.model-picker {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--glass);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
+
+.picker-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: start;
+  gap: 10px;
+}
+
+.picker-label {
+  padding-top: 7px;
+  color: var(--fg-3);
+  font-size: 12.5px;
+}
+
+.picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.picker-chips .chip {
+  padding: 0 12px;
+}
+
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chip[hidden] {
+  display: none;
+}
+
+.drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  color: var(--fg-2);
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.drop:hover,
+.drop:focus-within,
+.drop.over {
+  border-color: color-mix(in oklab, var(--accent) 70%, transparent);
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+
+.drop input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.drop svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.drop strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.picker-note {
+  margin: 0;
+  color: var(--fg-3);
+  font-size: 12.5px;
+}
+
+.select {
+  height: 32px;
+  max-width: 170px;
+  padding: 0 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  background: var(--chip);
+  color: var(--fg);
+  font: 500 13px var(--font);
+}
+
 /* ---------- responsive ---------- */
 
 @media (max-width: 960px) {
@@ -1216,6 +1334,11 @@ input[type='range']::-moz-range-thumb {
   }
   .section {
     padding-top: 96px;
+  }
+  /* the model sits below the copy */
+  .models {
+    min-height: 0;
+    padding-bottom: 46vh;
   }
   .footer {
     flex-direction: column;

@@ -46,6 +46,7 @@
       <nav class="links" aria-label="Sections">
         <a href="#features">Features</a>
         <a href="#layers">Layers</a>
+        <a href="#models">3D</a>
         <a href="#presets">Presets</a>
         <a href="#code">Code</a>
         <a data-repo="#readme" href="#">Docs</a>
@@ -111,9 +112,9 @@
       </section>
 
       <section class="band" aria-label="In numbers">
-        <div><strong id="stat-size">14 kB</strong><span>gzipped, zero dependencies</span></div>
+        <div><strong id="stat-size">16 kB</strong><span>gzipped, zero dependencies</span></div>
         <div><strong>Worker</strong><span>renders off the main thread</span></div>
-        <div><strong>7 layers</strong><span>all configurable, live</span></div>
+        <div><strong>7 layers + 3D</strong><span>glTF models lit by the sky</span></div>
         <div><strong>Any stack</strong><span>React, Vue, Svelte, Angular, HTML</span></div>
       </section>
 
@@ -219,6 +220,41 @@
           Hover a layer to see it alone. Each one can be tuned or switched off, live.
         </p>
         <div class="layers" id="layer-list"></div>
+      </section>
+
+      <section class="section models" id="models">
+        <div class="models-copy">
+          <p class="eyebrow">New · 3D</p>
+          <h2>Hang anything in the sky.</h2>
+          <p class="section-lead">
+            Pick a shape or drop in your own glTF model. The sky lights it: the glow follows your
+            cursor, the aurora traces its edges, the nebula shines in its reflections, and every
+            click sends a shockwave through it.
+          </p>
+          <div class="model-picker" data-deep-sky-ignore>
+            <div class="picker-row">
+              <span class="picker-label">Shape</span>
+              <div class="picker-chips" id="shape-list"></div>
+            </div>
+            <div class="picker-row">
+              <span class="picker-label">Surface</span>
+              <div class="picker-chips" id="material-list"></div>
+            </div>
+            <div class="picker-row">
+              <span class="picker-label">Extras</span>
+              <div class="picker-chips" id="model-extras"></div>
+            </div>
+            <label class="drop" id="model-drop">
+              <input type="file" id="model-file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" />
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 15V4M7.5 8.5 12 4l4.5 4.5" />
+                <path d="M4 14v3.5A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V14" />
+              </svg>
+              <span id="drop-text"><strong>Your own model</strong> · drop a .glb here, or browse</span>
+            </label>
+            <p class="picker-note">The file stays on your device. A self-contained .glb works best.</p>
+          </div>
+        </div>
       </section>
 
       <section class="section" id="presets">

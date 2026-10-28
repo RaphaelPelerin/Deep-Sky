@@ -1,7 +1,7 @@
 {
   "name": "deep-sky",
-  "version": "0.1.0",
-  "description": "A living, GPU-rendered cosmic background for the web: nebula, aurora, light beams and interactive stars, rendered off the main thread.",
+  "version": "0.2.0",
+  "description": "A living, GPU-rendered cosmic background for the web: nebula, aurora, light beams, interactive stars and 3D models lit by the sky, rendered off the main thread.",
   "keywords": [
     "background",
     "animated-background",
@@ -22,7 +22,12 @@
     "react",
     "vue",
     "svelte",
-    "angular"
+    "angular",
+    "3d",
+    "gltf",
+    "glb",
+    "pbr",
+    "bloom"
   ],
   "license": "MIT",
   "author": "Raphael Pellerin",

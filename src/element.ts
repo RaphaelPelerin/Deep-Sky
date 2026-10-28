@@ -1,6 +1,7 @@
 import { mountDeepSky } from './deep-sky';
 import type {
   ClickEffect,
+  ModelMaterial,
   PresetName,
   QualityPreset,
   DeepSkyInstance,
@@ -67,6 +68,8 @@ export class DeepSkyElement extends Base {
     'quality',
     'intro',
     'worker',
+    'model',
+    'model-material',
     ...LAYERS,
   ];
 
@@ -147,6 +150,14 @@ export class DeepSkyElement extends Base {
       const n = number(value);
       const main = MAIN_SETTING[name];
       out[name] = n !== undefined && main ? { [main]: n } : value !== 'false';
+    }
+    // one model: a shape name or a file URL, and its surface
+    const model = attr('model');
+    if (model) {
+      out.models = {
+        src: model,
+        ...(attr('model-material') && { material: attr('model-material') as ModelMaterial }),
+      };
     }
     // the element is the positioned box: the layer just fills it
     return { ...(out as DeepSkyOptions), ...this.#options, fixed: false };

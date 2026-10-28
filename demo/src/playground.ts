@@ -22,6 +22,8 @@ export interface PlaygroundHost {
   copyCode(): void;
   hud: Flag;
   mainThread: Flag;
+  /** the model shows on every section, not only the 3D one */
+  pinned: Flag;
 }
 
 interface Flag {
@@ -32,7 +34,7 @@ interface Flag {
 type Value = number | string | boolean;
 
 interface Control {
-  kind: 'range' | 'toggle' | 'choice';
+  kind: 'range' | 'toggle' | 'choice' | 'select';
   label: string;
   get(s: ResolvedOptions): Value;
   set(s: ResolvedOptions, v: Value): void;
@@ -81,7 +83,48 @@ const choice = (path: string, label: string, options: [string, string][]): Contr
   set: (s, v) => write(s, path, v),
 });
 
+const select = (path: string, label: string, options: [string, string][]): Control => ({
+  ...choice(path, label, options),
+  kind: 'select',
+});
+
 const QUALITY_NAMES = Object.keys(qualities) as QualityPreset[];
+
+/** the showcase model (the demo always keeps one in its state) */
+const MODEL_GROUP: Group = {
+  title: '3D model',
+  controls: [
+    select('models.0.src', 'Shape', [
+      ['orb', 'Orb'],
+      ['knot', 'Knot'],
+      ['torus', 'Torus'],
+      ['crystal', 'Crystal'],
+      ['gem', 'Gem'],
+      ['planet', 'Planet'],
+      ['cube', 'Cube'],
+    ]),
+    select('models.0.material', 'Surface', [
+      ['chrome', 'Chrome'],
+      ['glass', 'Glass'],
+      ['hologram', 'Hologram'],
+      ['iridescent', 'Iridescent'],
+      ['wire', 'Neon wire'],
+      ['nebula', 'Nebula'],
+      ['auto', 'Original'],
+    ]),
+    range('models.0.size', 'Size', 0.1, 1.2, 0.01),
+    range('models.0.x', 'Left · right', 0, 1, 0.01),
+    range('models.0.y', 'Top · bottom', 0, 1, 0.01),
+    range('models.0.spin', 'Spin (°/s)', -120, 120, 1),
+    range('models.0.morph', 'Liquid', 0, 2, 0.05),
+    range('models.0.glow', 'Bloom', 0, 3, 0.05),
+    range('models.0.rays', 'Light shafts', 0, 3, 0.05),
+    range('models.0.follow', 'Follows cursor', 0, 1.5, 0.05),
+    range('models.0.react', 'Shockwaves', 0, 3, 0.05),
+    range('models.0.float', 'Float', 0, 3, 0.05),
+    range('models.0.opacity', 'Opacity', 0, 1, 0.05),
+  ],
+};
 
 const GROUPS: Group[] = [
   {
@@ -258,6 +301,24 @@ export function createPlayground(panel: HTMLElement, host: PlaygroundHost) {
       row.append(h('span', 'ctl-label', c.label), sw);
       return row;
     }
+    if (c.kind === 'select') {
+      const row = h('label', 'ctl');
+      const sel = h('select', 'select');
+      for (const [value, text] of c.options!) sel.append(new Option(text, value));
+      // a value outside the list (a model loaded from a file): shown, not selectable
+      const other = new Option('Your file', '');
+      other.disabled = true;
+      sel.append(other);
+      sel.addEventListener('change', () => host.change((s) => c.set(s, sel.value)));
+      syncs.push(() => {
+        const v = c.get(host.state());
+        const known = c.options!.some(([value]) => value === v);
+        other.hidden = known;
+        sel.value = known ? String(v) : '';
+      });
+      row.append(h('span', 'ctl-label', c.label), sel);
+      return row;
+    }
     const row = h('div', 'ctl');
     const seg = h('div', 'seg');
     for (const [value, text] of c.options!) {
@@ -323,6 +384,15 @@ export function createPlayground(panel: HTMLElement, host: PlaygroundHost) {
     inner.append(...g.controls.map(control));
     body.append(group(g.title, !!g.open, inner, g.layer));
   }
+
+  // 3D: its switch shows the model on every section
+  const model = h('div', 'group-body');
+  model.append(...MODEL_GROUP.controls.map(control));
+  const modelGroup = group(MODEL_GROUP.title, false, model);
+  modelGroup
+    .querySelector('summary')!
+    .append(switchEl(host.pinned.get, host.pinned.set, 'Show the model on every section'));
+  body.append(modelGroup);
 
   // colors of the active theme
   const colors = h('div', 'group-body colors');

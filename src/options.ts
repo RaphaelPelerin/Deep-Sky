@@ -1,12 +1,14 @@
 import { parseColor } from './color';
-import type { EngineConfig, EnginePalette, RGB } from './engine/protocol';
+import { MATERIALS, SHAPES, type EngineConfig, type EnginePalette, type RGB } from './engine/protocol';
 import { presets } from './presets';
 import type {
   Color,
+  ModelOptions,
   Palette,
   PaletteOverrides,
   QualityOptions,
   QualityPreset,
+  ResolvedModel,
   ResolvedOptions,
   DeepSkyOptions,
   DeepSkyPreset,
@@ -54,12 +56,58 @@ export const defaults: Defaults = {
   clickIgnore: DEFAULT_CLICK_IGNORE,
   grain: 0.02,
   vignette: 0.6,
+  models: [],
   quality: 'medium',
   worker: true,
   zIndex: -1,
   pauseWhenHidden: true,
   yieldToPage: true,
 };
+
+/** a model's settings when neither it nor the preset sets them */
+export const modelDefaults: Omit<ResolvedModel, 'src'> = {
+  material: 'auto',
+  color: null,
+  x: 0.5,
+  y: 0.5,
+  size: 0.5,
+  rotation: [0, 0, 0],
+  spin: 18,
+  float: 1,
+  follow: 0.35,
+  react: 1,
+  morph: 0,
+  glow: 1,
+  rays: 0.6,
+  opacity: 1,
+};
+
+function resolveModels(value: DeepSkyOptions['models']): ResolvedModel[] {
+  if (!value) return [];
+  const list = Array.isArray(value) ? value : [value];
+  return list
+    .map((m): ModelOptions => (typeof m === 'string' ? { src: m } : m))
+    .filter((m) => m && m.src !== undefined && m.src !== null && m.src !== '')
+    .map((m) => {
+      const out: ResolvedModel = { ...modelDefaults, ...defined(m), src: m.src };
+      out.rotation = [0, 1, 2].map((i) => m.rotation?.[i] ?? 0) as [number, number, number];
+      return out;
+    });
+}
+
+const bufferIds = new WeakMap<ArrayBuffer, number>();
+let nextBuffer = 1;
+
+/** identifies a model's source across updates: built-in shapes, URLs, buffers */
+export function modelKey(src: ModelOptions['src']): string {
+  if (src instanceof ArrayBuffer) {
+    let id = bufferIds.get(src);
+    if (id === undefined) bufferIds.set(src, (id = nextBuffer++));
+    return `buf:${id}`;
+  }
+  const s = String(src);
+  return (SHAPES as readonly string[]).includes(s) ? `shape:${s}` : `url:${s}`;
+}
 
 const isPlain = (v: unknown): v is Record<string, unknown> =>
   Object.prototype.toString.call(v) === '[object Object]';
@@ -145,6 +193,7 @@ export function normalizeOptions(options: DeepSkyOptions = {}): ResolvedOptions 
     clickIgnore: options.clickIgnore ?? preset.clickIgnore ?? defaults.clickIgnore,
     grain: options.grain ?? preset.grain ?? defaults.grain,
     vignette: options.vignette ?? preset.vignette ?? defaults.vignette,
+    models: resolveModels(options.models ?? preset.models),
     quality:
       typeof quality === 'string'
         ? { ...(qualities[quality] ?? qualities.medium) }
@@ -235,6 +284,23 @@ export function toEngineConfig(r: ResolvedOptions): EngineConfig {
     gridSpeed: clamp(r.grid.speed, 0, 10),
     gridHeight: clamp(r.grid.height, 0.05, 1),
     gridTilt: clamp(r.grid.tilt, 0, 85),
+    models: r.models.map((m) => ({
+      key: modelKey(m.src),
+      material: Math.max(0, MATERIALS.indexOf(m.material)),
+      color: m.color ? rgb(m.color) : null,
+      x: clamp(m.x, -1, 2),
+      y: clamp(m.y, -1, 2),
+      size: clamp(m.size, 0.01, 4),
+      rotation: m.rotation.map((d) => (clamp(d, -36000, 36000) * Math.PI) / 180) as RGB,
+      spin: (clamp(m.spin, -3600, 3600) * Math.PI) / 180,
+      float: clamp(m.float, 0, 5),
+      follow: clamp(m.follow, 0, 2),
+      react: clamp(m.react, 0, 5),
+      morph: clamp(m.morph, 0, 2),
+      glow: clamp(m.glow, 0, 3),
+      rays: clamp(m.rays, 0, 3),
+      opacity: clamp(m.opacity, 0, 1),
+    })),
     click: r.click,
     scale: clamp(r.quality.scale, 0.1, 2),
     minScale: clamp(Math.min(r.quality.minScale, r.quality.scale), 0.05, 2),

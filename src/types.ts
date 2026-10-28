@@ -123,6 +123,60 @@ export interface CursorOptions extends Layer {
   linkDistance?: number;
 }
 
+/** Built-in 3D shapes */
+export type ModelShape = 'orb' | 'knot' | 'torus' | 'crystal' | 'gem' | 'planet' | 'cube';
+
+/** How a model's surface takes the sky's light */
+export type ModelMaterial =
+  /** the file's own materials (metal, roughness, textures); chrome for built-in shapes */
+  | 'auto'
+  /** a mirror: reflects the nebula and the lights */
+  | 'chrome'
+  /** refracts the sky behind it, split into colors at the edges */
+  | 'glass'
+  /** fresnel shell, scanlines, flicker and glitches, in the aurora colors */
+  | 'hologram'
+  /** thin-film colors that shift with the angle, like a soap bubble */
+  | 'iridescent'
+  /** glowing neon edges (the grid color by default) */
+  | 'wire'
+  /** made of the sky's own clouds and stars */
+  | 'nebula';
+
+/** A 3D model in the sky, lit by it */
+export interface ModelOptions {
+  /** a built-in shape, or a glTF / GLB file: its URL (relative to the page) or its bytes */
+  src: ModelShape | string | URL | ArrayBuffer;
+  /** default 'auto' */
+  material?: ModelMaterial;
+  /** tint, any CSS color; the light color of 'hologram' and 'wire' (null: the palette's) */
+  color?: Color | null;
+  /** center, fraction of the container from the left (default 0.5) */
+  x?: number;
+  /** center, fraction of the container from the top (default 0.5) */
+  y?: number;
+  /** largest side, fraction of the container height (default 0.5) */
+  size?: number;
+  /** starting orientation in degrees, [x, y, z] */
+  rotation?: [number, number, number];
+  /** turns around its vertical axis, degrees per second (default 18) */
+  spin?: number;
+  /** slow bobbing, 0 = still (default 1) */
+  float?: number;
+  /** leans towards the cursor, 0–1 (default 0.35) */
+  follow?: number;
+  /** shockwaves bend it, light it up and set it spinning; 0 ignores them (default 1) */
+  react?: number;
+  /** liquid surface that ripples like molten metal, 0–2 (default 0) */
+  morph?: number;
+  /** bloom around the bright parts, 0–3 (default 1) */
+  glow?: number;
+  /** light shafts streaming from the roaming light past the model, 0–3 (default 0.6) */
+  rays?: number;
+  /** 0–1 (default 1) */
+  opacity?: number;
+}
+
 export interface QualityOptions {
   /** shader resolution relative to CSS pixels (medium: 0.5) */
   scale?: number;
@@ -165,6 +219,11 @@ export interface DeepSkyOptions {
   grain?: number;
   /** darkened corners in the dark theme, 0–1.5 (default 0.6) */
   vignette?: number;
+  /**
+   * 3D models lit by the sky: a shape name, a model, or a list. The 3D layer (WebGL 2) is
+   * downloaded only when this is set.
+   */
+  models?: ModelShape | ModelOptions | (ModelShape | ModelOptions)[] | false;
 
   quality?: QualityPreset | QualityOptions;
   /**
@@ -183,15 +242,20 @@ export interface DeepSkyOptions {
 
   onStats?: (stats: DeepSkyStats) => void;
   onFallback?: (mode: 'main-thread' | 'css', reason: string) => void;
+  /** a model could not be shown (network, format, no WebGL 2…) */
+  onModelError?: (src: ModelOptions['src'] | '*', error: string) => void;
 }
 
 /** A preset is a set of options with complete palettes */
 export type DeepSkyPreset = Omit<
   DeepSkyOptions,
-  'preset' | 'palette' | 'onStats' | 'onFallback' | 'worker'
+  'preset' | 'palette' | 'onStats' | 'onFallback' | 'onModelError' | 'worker'
 > & {
   palette: { dark: Palette; light: Palette };
 };
+
+/** A model with every default applied */
+export type ResolvedModel = Required<Omit<ModelOptions, 'color'>> & { color: Color | null };
 
 /** Options with every default applied (what `normalizeOptions` returns) */
 export interface ResolvedOptions {
@@ -214,6 +278,7 @@ export interface ResolvedOptions {
   clickIgnore: string;
   grain: number;
   vignette: number;
+  models: ResolvedModel[];
   quality: Required<QualityOptions>;
   worker: boolean | string | URL;
   fixed: boolean | undefined;

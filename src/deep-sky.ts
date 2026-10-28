@@ -1,11 +1,13 @@
 import workerSource from 'virtual:deep-sky-worker';
 import { toRgba } from './color';
 import type { EngineEvent, EngineInit, EngineMessage } from './engine/protocol';
-import { mergeOptions, normalizeOptions, toEngineConfig } from './options';
+import { mergeOptions, modelKey, normalizeOptions, toEngineConfig } from './options';
 import type { DeepSkyInstance, DeepSkyMode, DeepSkyOptions } from './types';
 
 interface Link {
-  send(msg: EngineMessage): void;
+  send(msg: EngineMessage, transfer?: Transferable[]): void;
+  /** starts the 3D layer on this canvas (its code is downloaded then) */
+  attachModels(canvas: HTMLCanvasElement): Promise<void>;
   destroy(): void;
 }
 
@@ -149,6 +151,8 @@ export function mountDeepSky(
     } else if (e.type === 'stats') {
       const { type: _, ...stats } = e;
       opts.onStats?.({ ...stats, mode });
+    } else if (e.type === 'modelError') {
+      modelError(e.key, e.message);
     }
   };
 
@@ -156,6 +160,57 @@ export function mountDeepSky(
   const afterLink = () => {
     if (size) send({ type: 'resize', ...size });
     send({ type: 'visible', on: isVisible() });
+    void syncModels();
+  };
+
+  // ---------- 3D models ----------
+
+  let modelCanvas: HTMLCanvasElement | null = null;
+  /** the link the 3D layer is attached to, and when it is ready */
+  let modelLink: Link | null = null;
+  let modelsReady: Promise<boolean> = Promise.resolve(false);
+  /** model files already sent to the engine */
+  const sentModels = new Set<string>();
+
+  const modelError = (key: string, message: string) => {
+    const src = key === '*' ? '*' : (r.models.find((m) => modelKey(m.src) === key)?.src ?? key);
+    console.warn(`[deep-sky] ${src === '*' ? '3D layer' : `model ${String(src)}`}: ${message}`);
+    opts.onModelError?.(src, message);
+  };
+
+  /** starts the 3D layer the first time models show up, then sends the files it lacks */
+  const syncModels = async () => {
+    const current = link;
+    if (!r.models.length || !current || mode === 'css') return;
+    if (modelLink !== current) {
+      // a new engine (first start, or after a fallback): a fresh canvas, files sent again
+      modelLink = current;
+      sentModels.clear();
+      const canvas = el('canvas', LAYER);
+      if (modelCanvas) modelCanvas.replaceWith(canvas);
+      else root.append(canvas);
+      modelCanvas = canvas;
+      modelsReady = current.attachModels(canvas).then(
+        () => true,
+        (e: unknown) => {
+          modelError('*', e instanceof Error ? e.message : String(e));
+          return false;
+        },
+      );
+    }
+    if (!(await modelsReady) || link !== current || destroyed) return;
+    const base = doc.baseURI;
+    for (const m of r.models) {
+      const key = modelKey(m.src);
+      if (key.startsWith('shape:') || sentModels.has(key)) continue;
+      sentModels.add(key);
+      import('./models/load')
+        .then(({ loadAsset }) => loadAsset(m.src, base))
+        .then(({ asset, transfer }) => {
+          if (link === current) current.send({ type: 'modelData', key, asset }, transfer);
+        })
+        .catch((e: unknown) => modelError(key, e instanceof Error ? e.message : String(e)));
+    }
   };
 
   const bootWorker = (spec: true | string | URL): Promise<Worker | null> => {
@@ -221,7 +276,16 @@ export function mountDeepSky(
     const fx = fxCanvas.transferControlToOffscreen();
     worker.addEventListener('message', (e: MessageEvent<EngineEvent>) => onEvent(e.data));
     worker.addEventListener('error', () => toMainThread('the worker crashed'));
-    link = { send: (msg) => worker.postMessage(msg), destroy: () => worker.terminate() };
+    link = {
+      send: (msg, transfer = []) => worker.postMessage(msg, transfer),
+      attachModels: async (canvas) => {
+        const { modelsWorker } = await import('./models/code');
+        const off = canvas.transferControlToOffscreen();
+        const init: EngineMessage = { type: 'modelsInit', canvas: off, code: modelsWorker };
+        worker.postMessage(init, [off]);
+      },
+      destroy: () => worker.terminate(),
+    };
     mode = 'worker';
     const msg: EngineMessage = { type: 'init', gl, fx, ...init() };
     worker.postMessage(msg, [gl, fx]);
@@ -233,7 +297,14 @@ export function mountDeepSky(
     if (destroyed) return;
     mode = 'main-thread';
     const engine = new Engine(glCanvas, fxCanvas, onEvent, init());
-    link = { send: (msg) => engine.handle(msg), destroy: () => engine.destroy() };
+    link = {
+      send: (msg) => engine.handle(msg),
+      attachModels: async (canvas) => {
+        const { ModelLayer } = await import('./models/layer');
+        engine.attachModels(new ModelLayer(canvas, onEvent));
+      },
+      destroy: () => engine.destroy(),
+    };
     afterLink();
   };
 
@@ -449,6 +520,7 @@ export function mountDeepSky(
     watchLongTasks();
     resize();
     applyDom();
+    void syncModels();
   };
 
   const setPaused = (value: boolean) => {

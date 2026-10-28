@@ -6,13 +6,13 @@
 
 **Put the universe behind your UI.**
 
-A living, GPU-rendered background for the web: a nebula, northern lights, light beams and stars that react to your cursor.<br />
-It renders in a Web Worker, so your app never drops a frame.
+A living, GPU-rendered background for the web: a nebula, northern lights, light beams, stars that react to your cursor,<br />
+and 3D models lit by that sky. It renders in a Web Worker, so your app never drops a frame.
 
-**[Live demo & playground](https://deep-sky-omega.vercel.app)** · [Install](#install) · [Frameworks](#frameworks) · [Options](#options) · [How it works](#how-it-works)
+**[Live demo & playground](https://deep-sky-omega.vercel.app)** · [Install](#install) · [3D models](#3d-models) · [Frameworks](#frameworks) · [Options](#options) · [How it works](#how-it-works)
 
 [![npm](https://img.shields.io/npm/v/deep-sky?color=8ab4ff&label=npm)](https://www.npmjs.com/package/deep-sky)
-[![gzip](https://img.shields.io/badge/gzip-14%20kB-8ab4ff)](#performance)
+[![gzip](https://img.shields.io/badge/gzip-16%20kB-8ab4ff)](#performance)
 [![dependencies](https://img.shields.io/badge/dependencies-0-8ab4ff)](package.json)
 [![types](https://img.shields.io/badge/types-TypeScript-c9a7ff)](src/types.ts)
 [![license](https://img.shields.io/badge/license-MIT-c9a7ff)](LICENSE)
@@ -25,11 +25,12 @@ It renders in a Web Worker, so your app never drops a frame.
 
 - **Off the main thread.** The shader and the particles run in a Web Worker on an OffscreenCanvas. Your clicks, requests and renders stay instant.
 - **Adapts to the device.** It measures its own frame time, lowers its resolution and then its frame rate on slower GPUs, backs off while your page runs long tasks, and pauses when off-screen.
+- **3D models, lit by the sky.** Drop in a glTF file or a built-in shape: the cursor light, the aurora and the nebula light it, shockwaves bend it. Chrome, glass, hologram, neon wire and more, with bloom and light shafts.
 - **Feels alive.** A light follows the cursor, stars swirl around it and link into constellations, clicks send shockwaves through the nebula, shooting stars cross the sky.
 - **Fully themeable.** Seven presets, every color and every layer configurable live, with a smooth crossfade between dark and light themes.
 - **Works everywhere.** Vanilla JS, React, Vue, Svelte, Angular, a `<deep-sky>` tag or a `<script>` from a CDN. TypeScript types included.
 - **Polite by default.** Respects `prefers-reduced-motion`, is hidden from assistive tech, never blocks clicks, and falls back gracefully when WebGL or workers are missing.
-- **Small.** 14 kB gzipped, zero dependencies.
+- **Small.** 16 kB gzipped, zero dependencies. The 3D layer (15 kB) is only downloaded by pages that use it.
 
 ## Presets
 
@@ -40,6 +41,49 @@ It renders in a Web Worker, so your app never drops a frame.
 | `abyss` | `synthwave` | `daybreak` (light) |
 
 Plus `graphite`, a quiet monochrome sky for product UIs. Every preset has a dark and a light palette. Build your own in the [playground](https://deep-sky-omega.vercel.app) and copy the generated code.
+
+## 3D models
+
+| ![Chrome](.github/assets/3d-chrome.webp) | ![Glass](.github/assets/3d-glass.webp) | ![Hologram](.github/assets/3d-hologram.webp) |
+| :--: | :--: | :--: |
+| `chrome` (liquid with `morph`) | `glass` | `hologram` |
+| ![Iridescent](.github/assets/3d-iridescent.webp) | ![Neon wire](.github/assets/3d-wire.webp) | ![Nebula](.github/assets/3d-nebula.webp) |
+| `iridescent` | `wire` | `nebula` |
+
+Hang a model in the sky, and the sky lights it:
+
+- **The roaming light is a real light.** It follows the cursor (or wanders), and its highlights slide across the surface.
+- **The aurora colors are rim lights**, and the nebula frame is what metals reflect and glass refracts, split into colors at the edges.
+- **Clicks hit it.** Each shockwave bulges the mesh as the ring passes through, flashes across it and sets it spinning.
+- **It feels physical.** It leans towards the cursor, bobs, and materializes through a burning noise front when it loads.
+- **HDR, 4× MSAA, bloom** and light shafts streaming from the cursor light past the model.
+
+```js
+createDeepSky(document.body, {
+  preset: 'synthwave',
+  models: { src: '/models/ship.glb', x: 0.72, size: 0.5 }, // or 'knot', or a list
+});
+```
+
+`src` is a built-in shape (`'orb'`, `'knot'`, `'torus'`, `'crystal'`, `'gem'`, `'planet'`, `'cube'`), the URL of a `.glb` / `.gltf` file (relative to the page) or its bytes as an `ArrayBuffer` (a file the user picked, for instance). Files keep their materials (base color, metal and roughness, normal, emissive and occlusion maps) unless you choose a surface. Models are centered and scaled to fit, so any export works as is.
+
+| Setting | Default | |
+| --- | --- | --- |
+| `material` | `'auto'` | `'auto'` (the file's materials, chrome for shapes), `'chrome'`, `'glass'`, `'hologram'`, `'iridescent'`, `'wire'`, `'nebula'` |
+| `color` | palette | Tint; the light color of `hologram` and `wire` |
+| `x`, `y` | `0.5` | Center, as a fraction of the container (from the left, from the top) |
+| `size` | `0.5` | Largest side, as a fraction of the container height |
+| `rotation` | `[0, 0, 0]` | Starting orientation, in degrees |
+| `spin` | `18` | Degrees per second around the vertical axis |
+| `float` | `1` | Slow bobbing |
+| `follow` | `0.35` | Leans towards the cursor |
+| `react` | `1` | Strength of the shockwaves on it (`0` ignores them) |
+| `morph` | `0` | Liquid surface, `0` to `2` |
+| `glow` | `1` | Bloom |
+| `rays` | `0.6` | Light shafts |
+| `opacity` | `1` | |
+
+The 3D layer needs WebGL 2. It renders in the worker with the rest, and the adaptive quality lowers its resolution first when frames get slow. Draco or meshopt compressed files aren't supported (`onModelError` tells you); animations and skins show their rest pose.
 
 ## Install
 
@@ -172,7 +216,7 @@ export class DeepSkyDirective {
 </section>
 ```
 
-`<deep-sky>` fills its parent (or the viewport with the `fixed` attribute). Attributes: `preset`, `theme`, `speed`, `animate`, `click`, `quality`, `intro`, `worker`, and one per layer (`nebula="1.5"` sets the intensity, `grid="false"` hides it). Every option is available through the `options` property:
+`<deep-sky>` fills its parent (or the viewport with the `fixed` attribute). Attributes: `preset`, `theme`, `speed`, `animate`, `click`, `quality`, `intro`, `worker`, `model` and `model-material` (one 3D model), and one per layer (`nebula="1.5"` sets the intensity, `grid="false"` hides it). Every option is available through the `options` property:
 
 ```js
 document.querySelector('deep-sky').options = { stars: { density: 2 } };
@@ -196,6 +240,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 | `clickIgnore` | CSS selector | links, buttons, inputs… | Clicks on these never trigger the effect (also: `data-deep-sky-ignore`) |
 | `grain` | `number` | `0.02` | Film grain, 0 to 0.3 |
 | `vignette` | `number` | `0.6` | Darkened corners (dark theme) |
+| `models` | shape name, model, or a list | none | See [3D models](#3d-models) |
 | `quality` | `'low' \| 'medium' \| 'high' \| 'ultra'` or object | `'medium'` | See [performance](#performance) |
 | `worker` | `boolean \| string \| URL` | `true` | `false` renders on the main thread; a URL loads the worker script from there |
 | `fixed` | `boolean` | `true` on `<body>` | Cover the viewport instead of the container |
@@ -204,6 +249,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 | `yieldToPage` | `boolean` | `true` | Slow down while the page runs long tasks |
 | `onStats` | `(stats) => void` | | Every second: `fps`, `shaderFps`, `scale`, `particles`, `mode` |
 | `onFallback` | `(mode, reason) => void` | | Called when it falls back to the main thread or to CSS |
+| `onModelError` | `(src, error) => void` | | A model could not be shown (network, format, no WebGL 2) |
 
 ### Layers
 
@@ -263,7 +309,7 @@ sky.ready;   // Promise, resolved after the first frame
 sky.element; // the background layer
 ```
 
-Also exported: `presets`, `presetNames`, `defaults`, `qualities`, `normalizeOptions()` (every default applied, handy for building UIs) and `mergeOptions()`.
+Also exported: `presets`, `presetNames`, `defaults`, `qualities`, `modelDefaults`, `modelShapes`, `modelMaterials`, `normalizeOptions()` (every default applied, handy for building UIs) and `mergeOptions()`.
 
 ## Recipes
 
@@ -303,16 +349,21 @@ flowchart LR
   subgraph worker["Web Worker"]
     D["WebGL shader<br/>nebula · aurora · beams · light · shockwaves"]
     E["2D particles<br/>grid · stars · constellations · meteors · spotlight"]
+    M["3D layer (WebGL 2, on demand)<br/>glTF · PBR · bloom · light shafts"]
   end
   B -- postMessage --> D
   B -- postMessage --> E
+  B -- "glTF bytes" --> M
+  D -- "sky frame" --> M
   D -- OffscreenCanvas --> F(("page"))
   E -- OffscreenCanvas --> F
+  M -- OffscreenCanvas --> F
 ```
 
 - **The shader** layers a domain-warped fractal noise nebula ([technique](https://iquilezles.org/articles/warp/)), three aurora curtains with vertical streaks, swaying light beams, a light that follows the cursor through a small lens, up to four simultaneous shockwaves, a light sweep, grain and a vignette. A nebula is soft by nature, so it renders at half resolution and 30 fps, then gets upscaled.
 - **The particle layer** draws stars at different depths (parallax), a magnetic swirl around the cursor, constellation lines, shooting stars and a spotlight, all from pre-rendered sprites.
 - **The grid** is a perspective plane projected by hand on the particle layer, with sub-pixel antialiasing so its lines glide instead of shimmering.
+- **The 3D layer** is a separate script that the page hands to the worker the first time a model shows up. Every sky frame becomes a texture: metals reflect it (blurred by roughness through its mipmaps) and glass refracts it. Models are drawn into a 4× multisampled HDR target, followed by a bright pass, two blur levels, light shafts marched towards the cursor light, and tone mapping. Normal maps need no tangents: the frame comes from screen-space derivatives.
 - **Fallbacks:** worker + OffscreenCanvas, then the same engine on the main thread (loaded on demand), then CSS gradients when WebGL is missing. Lost WebGL contexts are restored.
 
 ## Performance
@@ -326,7 +377,7 @@ flowchart LR
 
 Particles run at 60 fps while the cursor moves and 30 fps at rest (always 60 on `high` and `ultra`). When frames get slow, the adaptive mode lowers the shader resolution down to `minScale`, then its frame rate. A long task on your page (big render, heavy JSON…) makes it back off for two seconds. Nothing renders while the sky is off-screen or the tab is hidden.
 
-Size: 14 kB gzipped for the default entry, worker included. The main-thread engine (7 kB) is only downloaded when a fallback needs it.
+Size: 16 kB gzipped for the default entry, worker included. The main-thread engine (8 kB) is only downloaded when a fallback needs it, and the 3D layer (15 kB) when a page shows models.
 
 ## Browser support
 
@@ -335,6 +386,8 @@ Size: 14 kB gzipped for the default entry, worker included. The main-thread engi
 | Chrome, Edge · Firefox 105+ · Safari 17+ | Web Worker |
 | Safari 15–16 | Main thread |
 | No WebGL | CSS gradients + particles |
+
+3D models need WebGL 2, available in all of the above.
 
 ## FAQ
 
@@ -352,8 +405,8 @@ npm run dev          # demo and playground on http://localhost:5173
 npm test             # unit tests
 npm run build        # library → dist/
 npm run build:demo   # site → demo/dist
-npm run capture      # README images and social card (needs a local Chrome)
-npm run record       # 20 s demo video → .capture/deep-sky.mp4
+npm run capture      # README images and social card (needs a local Chrome; -- --gpu is faster)
+npm run record       # 30 s demo video → .capture/deep-sky.mp4 (-- --gpu for a smooth one)
 ```
 
 Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).

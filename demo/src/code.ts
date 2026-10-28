@@ -1,4 +1,5 @@
 import {
+  modelDefaults,
   normalizeOptions,
   qualities,
   type Palette,
@@ -23,8 +24,11 @@ const SCALARS = ['theme', 'speed', 'animate', 'intro', 'click', 'grain', 'vignet
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** the smallest options object that reproduces `cur` on top of its preset */
-export function minimalOptions(cur: ResolvedOptions): DeepSkyOptions {
+/**
+ * the smallest options object that reproduces `cur` on top of its preset; a model loaded from
+ * a local file shows as a placeholder path, or is left out of share links (`forLink`)
+ */
+export function minimalOptions(cur: ResolvedOptions, forLink = false): DeepSkyOptions {
   const base = normalizeOptions({ preset: cur.preset });
   const out: Record<string, unknown> = {};
   if (cur.preset && cur.preset !== 'cosmos') out.preset = cur.preset;
@@ -54,6 +58,17 @@ export function minimalOptions(cur: ResolvedOptions): DeepSkyOptions {
     if (Object.keys(changes).length) palette[theme] = changes;
   }
   if (Object.keys(palette).length) out.palette = palette;
+  const models = cur.models
+    .filter((m) => !(forLink && m.src instanceof ArrayBuffer))
+    .map((m) => {
+      const changes: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(m)) {
+        if (k !== 'src' && !same(v, modelDefaults[k as keyof typeof modelDefaults])) changes[k] = v;
+      }
+      const src = m.src instanceof ArrayBuffer ? '/your-model.glb' : String(m.src);
+      return Object.keys(changes).length ? { src, ...changes } : src;
+    });
+  if (models.length) out.models = models.length === 1 ? models[0] : models;
   return out as DeepSkyOptions;
 }
 
@@ -118,6 +133,7 @@ function splitAttributes(o: DeepSkyOptions) {
   const rest: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(o)) {
     if ((ATTRIBUTES as readonly string[]).includes(k) && typeof v !== 'object') attrs.push(`${k}="${v}"`);
+    else if (k === 'models' && typeof v === 'string') attrs.push(`model="${v}"`);
     else if (v === false) attrs.push(`${k}="false"`);
     else rest[k] = v;
   }

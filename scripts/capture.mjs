@@ -3,6 +3,7 @@
  *
  *   npm run build:demo && npm run capture          README images + social card
  *   npm run capture -- --check --out .capture      health check: stats, errors, a few frames
+ *   add --gpu to render with the real GPU instead of the software renderer (much faster)
  *
  * Set CHROME_PATH if Chrome or Edge is not found.
  */
@@ -39,6 +40,22 @@ const ASSETS = [
   { file: '.github/assets/abyss.webp', query: 'ui=0&preset=abyss', size: [960, 540], scale: 1, pointer: [0.5, 0.55] },
   { file: '.github/assets/synthwave.webp', query: 'ui=0&preset=synthwave', size: [960, 540], scale: 1, pointer: [0.45, 0.4] },
   { file: '.github/assets/daybreak.webp', query: 'ui=0&preset=daybreak', size: [960, 540], scale: 1, pointer: [0.6, 0.5] },
+  // 3D: one surface each
+  ...[
+    ['chrome', 'synthwave', 'knot', 'morph=0.5'],
+    ['glass', 'aurora', 'orb', ''],
+    ['hologram', 'abyss', 'planet', ''],
+    ['iridescent', 'ember', 'crystal', ''],
+    ['wire', 'synthwave', 'gem', ''],
+    ['nebula', 'cosmos', 'orb', ''],
+  ].map(([material, preset, model, extra]) => ({
+    file: `.github/assets/3d-${material}.webp`,
+    query: `ui=0&preset=${preset}&model=${model}&material=${material}&${extra}`,
+    size: [720, 480],
+    scale: 1,
+    pointer: [0.3, 0.3],
+    models: true,
+  })),
 ];
 
 const CHECKS = [
@@ -57,10 +74,16 @@ const base = option('url', null);
 const server = base ? null : await preview({ preview: { port: 4317, strictPort: true } });
 const url = base ?? 'http://localhost:4317/';
 
+// --gpu: the real GPU (much faster, and the 3D shots need many frames to materialize)
+const gpu = flag('gpu');
 const browser = await puppeteer.launch({
   executablePath: chrome,
   headless: true,
-  args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--hide-scrollbars'],
+  args: [
+    '--ignore-gpu-blocklist',
+    '--hide-scrollbars',
+    ...(gpu ? ['--enable-gpu', ...(process.platform === 'win32' ? ['--use-angle=d3d11'] : [])] : ['--enable-unsafe-swiftshader']),
+  ],
 });
 
 try {
@@ -77,7 +100,8 @@ try {
     if (shot.click) await page.click(shot.click);
     // a cursor on the sky: spotlight, swirl and constellations
     await page.mouse.move(width * shot.pointer[0], height * shot.pointer[1], { steps: 8 });
-    await new Promise((resolve) => setTimeout(resolve, check ? 6000 : 4500));
+    const wait = check ? 6000 : shot.models && !gpu ? 25000 : 4500;
+    await new Promise((resolve) => setTimeout(resolve, wait));
     await page.mouse.move(width * shot.pointer[0] + 6, height * shot.pointer[1] + 4, { steps: 4 });
     await new Promise((resolve) => setTimeout(resolve, 600));
 

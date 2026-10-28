@@ -5,6 +5,7 @@ import type {
   EngineInit,
   EngineMessage,
   EnginePalette,
+  ModelLayerApi,
   RGB,
 } from './protocol';
 import { FRAG, VERT } from './shader';
@@ -204,6 +205,10 @@ export class Engine {
   private statFx = 0;
   private statGl = 0;
   private readySent = false;
+  /** 3D layer, attached when the page shows models */
+  private models: ModelLayerApi | null = null;
+  /** its pixel ratio, lowered by the adaptive quality */
+  private modelDpr = 1;
 
   constructor(
     private readonly glCanvas: AnyCanvas,
@@ -264,10 +269,28 @@ export class Engine {
       case 'stats':
         this.stats = msg.on;
         break;
+      case 'modelData':
+        this.models?.load(msg.key, msg.asset);
+        break;
     }
   }
 
+  /** the 3D layer joins the loop: same clock, same lights, the sky as its backdrop */
+  attachModels(layer: ModelLayerApi) {
+    this.models?.destroy();
+    this.models = layer;
+    layer.onChange = () => {
+      if (!this.running) this.renderStatic();
+    };
+    layer.configure(this.cfg.models);
+    layer.resize(this.w, this.h, this.modelDpr);
+    this.lastGl = -1;
+    if (!this.running) this.renderStatic();
+  }
+
   destroy() {
+    this.models?.destroy();
+    this.models = null;
     this.stop();
     this.gl?.getExtension('WEBGL_lose_context')?.loseContext();
     this.gl = null;
@@ -405,7 +428,14 @@ export class Engine {
     gl.uniform3fv(u.uRays, p.rays);
     gl.uniform3fv(u.uGlow, p.glow);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    if (this.off && this.view) this.view.transferFromImageBitmap(this.off.transferToImageBitmap());
+    const models = this.models?.active ? this.models : null;
+    if (this.off && this.view) {
+      const frame = this.off.transferToImageBitmap();
+      models?.backdrop(frame);
+      this.view.transferFromImageBitmap(frame);
+    } else {
+      models?.backdrop(this.glCanvas);
+    }
     this.statGl++;
     this.markReady();
   }
@@ -441,13 +471,14 @@ export class Engine {
       const active = t - this.lastPointer < 5;
       // particles: 60 fps while the pointer moves, the grid scrolls (30 fps makes it judder)
       // or on high quality, 30 otherwise; shader: the configured rate, 12 fps while the page is busy
-      const scrolling = this.cfg.grid > 0 && this.cfg.gridSpeed > 0;
+      const scrolling = (this.cfg.grid > 0 && this.cfg.gridSpeed > 0) || !!this.models?.active;
       const fxStep = !busy && (active || scrolling || this.cfg.fps > 45) ? 1 / 62 : 1 / 31;
       if (t - this.lastFx >= fxStep) {
         const k = Math.min(0.05, Math.max(0.001, t - this.lastFx)) * 60;
         this.lastFx = t;
         this.step(k);
         this.renderFx(t, k);
+        this.renderModels(t);
       }
       if (t - this.lastGl >= (busy ? 1 / 12 : this.glStep)) {
         this.lastGl = t;
@@ -474,6 +505,24 @@ export class Engine {
     const clock = this.now() + 100;
     this.renderGl(clock);
     this.renderFx(clock, 0);
+    this.renderModels(clock);
+  }
+
+  private renderModels(clock: number) {
+    const models = this.models;
+    if (!models?.active) return;
+    const m = this.mouse;
+    models.render({
+      time: this.time,
+      clock,
+      light: [m.x, m.y],
+      ripples: this.ripples,
+      sweepAt: this.sweepAt,
+      palette: this.shaderPalette(),
+      dark: this.darkMix,
+      glow: this.cfg.glow,
+      animated: this.running,
+    });
   }
 
   private step(k: number) {
@@ -506,7 +555,11 @@ export class Engine {
     this.frameCount = 0;
     this.adaptAt = t;
     if (count < 20 || avg <= 1 / 40) return;
-    if (this.glScale > this.cfg.minScale + 0.01) {
+    // the 3D layer is the heaviest: its resolution goes down first, to 1 px per CSS px
+    if (this.models?.active && this.modelDpr > 1.01) {
+      this.modelDpr = Math.max(1, this.modelDpr * 0.75);
+      this.models.resize(this.w, this.h, this.modelDpr);
+    } else if (this.glScale > this.cfg.minScale + 0.01) {
       this.glScale = Math.max(this.cfg.minScale, this.glScale * 0.7);
       this.applySize();
     } else if (this.glStep < 1 / 15) {
@@ -543,6 +596,7 @@ export class Engine {
     }
     if (cfg.fps !== prev.fps) this.glStep = 1 / (cfg.fps + 1);
     if (cfg.meteors !== prev.meteors) this.nextMeteor = this.time + 0.5;
+    this.models?.configure(cfg.models);
     if (this.sized) this.fitStars();
     if (!this.running) this.renderStatic();
   }
@@ -553,6 +607,7 @@ export class Engine {
     this.w = Math.max(1, w);
     this.h = Math.max(1, h);
     this.dpr = dpr;
+    this.modelDpr = dpr;
     this.applySize();
     if (this.sized) {
       for (const s of this.stars) {
@@ -581,6 +636,7 @@ export class Engine {
     this.fxCanvas.width = Math.max(1, Math.round(this.w * this.dpr));
     this.fxCanvas.height = Math.max(1, Math.round(this.h * this.dpr));
     this.ctx?.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.models?.resize(this.w, this.h, this.modelDpr);
   }
 
   private pointer(x: number, y: number, inside: boolean) {

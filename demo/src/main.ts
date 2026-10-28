@@ -2,11 +2,15 @@ import '@fontsource-variable/inter';
 import './style.css';
 import {
   createDeepSky,
+  modelDefaults,
+  modelShapes,
   normalizeOptions,
   presetNames,
   presets,
+  type ModelMaterial,
   type PresetName,
   type QualityPreset,
+  type ResolvedModel,
   type ResolvedOptions,
   type DeepSkyInstance,
   type DeepSkyOptions,
@@ -52,10 +56,35 @@ function initialState(): ResolvedOptions {
   if (theme && THEMES.includes(theme)) options.theme = theme;
   const quality = params.get('quality');
   if (quality) options.quality = quality as QualityPreset;
+  // ?model=knot&material=glass&morph=1: a model in the middle of the sky
+  const src = params.get('model');
+  if (src && (modelShapes as readonly string[]).includes(src)) {
+    options.models = {
+      src,
+      material: (params.get('material') as ModelMaterial | null) ?? 'chrome',
+      morph: Number(params.get('morph')) || 0,
+      size: Number(params.get('size')) || 0.6,
+    };
+  }
   return fresh(options);
 }
 
+/** the showcase model: right of the copy on wide screens, below it on phones */
+const defaultModel = (): ResolvedModel => ({
+  ...structuredClone(modelDefaults),
+  src: 'knot',
+  material: 'chrome',
+  ...(innerWidth >= 900 ? { x: 0.73, y: 0.5, size: 0.5 } : { x: 0.5, y: 0.76, size: 0.32 }),
+});
+
 let state = initialState();
+/** a shared link with a model shows it everywhere */
+let pinned = state.models.length > 0;
+if (!state.models.length) state.models = [defaultModel()];
+/** the 3D section is on screen */
+let showcase = false;
+/** the visitor played with the model: the snippet includes it */
+let touched = pinned;
 /** a theme the visitor picked explicitly survives preset changes */
 let themeChoice: Theme | null = location.hash.startsWith('#c=') ? state.theme : null;
 let solo: LayerKey | null = null;
@@ -82,9 +111,14 @@ function soloed(s: ResolvedOptions, layer: LayerKey): ResolvedOptions {
 
 const liveOptions = (): DeepSkyOptions => ({
   ...(solo ? soloed(state, solo) : state),
+  models: showcase || pinned ? state.models : [],
   worker: !mainThread,
   onStats: hudOn ? onStats : undefined,
+  onModelError: (_, error) => toast(`Model: ${error}`),
 });
+
+/** the state the code and links describe: the model only once the visitor used it */
+const described = (): ResolvedOptions => ({ ...state, models: touched || pinned ? state.models : [] });
 
 let sky: DeepSkyInstance = createDeepSky(document.body, liveOptions());
 
@@ -108,6 +142,7 @@ function apply(options: { pulse?: boolean } = {}) {
   renderCode();
   renderPresets();
   renderLayers();
+  renderModels();
   playground.refresh();
   // once shared, the link follows the changes
   if (location.hash.startsWith('#c=')) {
@@ -117,7 +152,9 @@ function apply(options: { pulse?: boolean } = {}) {
 }
 
 function setPreset(name: PresetName) {
+  const models = state.models;
   state = fresh({ preset: name, theme: themeChoice ?? undefined, quality: state.quality });
+  state.models = models;
   apply({ pulse: true });
 }
 
@@ -262,7 +299,7 @@ const tabButtons = FRAMEWORKS.map(([fw, label]) => {
   tabs.append(b);
   return b;
 });
-const currentCode = () => snippet(framework, minimalOptions(state));
+const currentCode = () => snippet(framework, minimalOptions(described()));
 function renderCode() {
   FRAMEWORKS.forEach(([fw], i) => tabButtons[i].setAttribute('aria-selected', String(fw === framework)));
   codeBlock.innerHTML = highlight(currentCode());
@@ -272,7 +309,7 @@ $('#copy-code').addEventListener('click', () => copy(currentCode(), 'Snippet cop
 // ---------- playground ----------
 
 const shareUrl = () => {
-  const options = minimalOptions(state);
+  const options = minimalOptions(described(), true);
   const hash = Object.keys(options).length ? `#c=${encodeShare(options)}` : '';
   return `${location.origin}${location.pathname}${hash}`;
 };
@@ -313,6 +350,7 @@ function randomize() {
   next.meteors.enabled = Math.random() < 0.75;
   next.grid.enabled = Math.random() < 0.3;
   next.speed = pick(0.7, 1.5);
+  next.models = state.models;
   state = next;
   apply({ pulse: true });
 }
@@ -321,16 +359,32 @@ const playground = createPlayground($('#panel'), {
   state: () => state,
   change: (mutate) => {
     const theme = state.theme;
+    const model = JSON.stringify(state.models);
     mutate(state);
     if (state.theme !== theme) themeChoice = state.theme;
+    // a model edited from the playground has to be seen, wherever the page is scrolled
+    if (JSON.stringify(state.models) !== model) {
+      touched = true;
+      pinned ||= !showcase;
+    }
     apply();
   },
   setPreset,
   isDark,
   randomize,
   reset: () => {
+    const models = state.models;
     state = fresh({ preset: state.preset, theme: themeChoice ?? undefined });
+    state.models = models;
     apply({ pulse: true });
+  },
+  pinned: {
+    get: () => pinned,
+    set: (on) => {
+      pinned = on;
+      touched ||= on;
+      apply();
+    },
   },
   share: () => {
     const url = shareUrl();
@@ -362,5 +416,135 @@ const playground = createPlayground($('#panel'), {
 for (const b of document.querySelectorAll('[data-open-panel]')) {
   b.addEventListener('click', () => playground.open());
 }
+
+// ---------- 3D showcase ----------
+
+const SHAPE_LABELS: Record<string, string> = {
+  orb: 'Orb',
+  knot: 'Knot',
+  torus: 'Torus',
+  crystal: 'Crystal',
+  gem: 'Gem',
+  planet: 'Planet',
+  cube: 'Cube',
+};
+const MATERIAL_LABELS: [ModelMaterial, string][] = [
+  ['chrome', 'Chrome'],
+  ['glass', 'Glass'],
+  ['hologram', 'Hologram'],
+  ['iridescent', 'Iridescent'],
+  ['wire', 'Neon wire'],
+  ['nebula', 'Nebula'],
+  ['auto', 'Original'],
+];
+const model = () => state.models[0];
+let fileName = '';
+
+/** a model change from the section: no pin, it shows while the section is on screen */
+function editModel(edit: (m: ResolvedModel) => void) {
+  edit(model());
+  touched = true;
+  apply();
+}
+
+const chip = (label: string, onClick: () => void) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'chip';
+  b.textContent = label;
+  b.addEventListener('click', onClick);
+  return b;
+};
+const shapeButtons = modelShapes.map((name) =>
+  chip(SHAPE_LABELS[name], () =>
+    editModel((m) => {
+      m.src = name;
+      if (m.material === 'auto') m.material = 'chrome';
+    }),
+  ),
+);
+const fileChip = chip('', () => undefined);
+fileChip.hidden = true;
+$('#shape-list').append(...shapeButtons, fileChip);
+const materialButtons = MATERIAL_LABELS.map(([material, label]) =>
+  chip(label, () => editModel((m) => (m.material = material))),
+);
+$('#material-list').append(...materialButtons);
+const extras: [string, (m: ResolvedModel) => boolean, (m: ResolvedModel, on: boolean) => void][] = [
+  ['Liquid metal', (m) => m.morph > 0, (m, on) => (m.morph = on ? 1 : 0)],
+  ['Light shafts', (m) => m.rays > 0, (m, on) => (m.rays = on ? 1.2 : 0)],
+  ['Follow cursor', (m) => m.follow > 0, (m, on) => (m.follow = on ? 0.6 : 0)],
+];
+const extraButtons = extras.map(([label, get, set]) =>
+  chip(label, () => editModel((m) => set(m, !get(m)))),
+);
+const pinButton = chip('On every section', () => {
+  pinned = !pinned;
+  touched ||= pinned;
+  apply();
+});
+$('#model-extras').append(...extraButtons, pinButton);
+
+function renderModels() {
+  const m = model();
+  const file = m.src instanceof ArrayBuffer;
+  shapeButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(m.src === modelShapes[i])));
+  fileChip.hidden = !file;
+  fileChip.textContent = fileName;
+  fileChip.setAttribute('aria-pressed', String(file));
+  MATERIAL_LABELS.forEach(([material], i) => {
+    const b = materialButtons[i];
+    // built-in shapes have no materials of their own
+    b.disabled = material === 'auto' && !file;
+    b.setAttribute('aria-pressed', String(m.material === material || (!file && material === 'chrome' && m.material === 'auto')));
+  });
+  extras.forEach(([, get], i) => extraButtons[i].setAttribute('aria-pressed', String(get(m))));
+  pinButton.setAttribute('aria-pressed', String(pinned));
+}
+
+async function loadFile(file: File | undefined) {
+  if (!file) return;
+  if (!/\.(glb|gltf)$/i.test(file.name)) {
+    toast('A .glb or .gltf file, please');
+    return;
+  }
+  fileName = file.name.length > 22 ? `${file.name.slice(0, 20)}…` : file.name;
+  const data = await file.arrayBuffer();
+  editModel((m) => {
+    m.src = data;
+    // a file comes with its own materials
+    m.material = 'auto';
+  });
+  toast(`${file.name} is in the sky`);
+}
+const drop = $('#model-drop');
+const fileInput = $<HTMLInputElement>('#model-file');
+fileInput.addEventListener('change', () => {
+  void loadFile(fileInput.files?.[0]);
+  fileInput.value = '';
+});
+const showcaseEl = $('#models');
+showcaseEl.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  drop.classList.add('over');
+});
+showcaseEl.addEventListener('dragleave', (e) => {
+  if (!showcaseEl.contains(e.relatedTarget as Node | null)) drop.classList.remove('over');
+});
+showcaseEl.addEventListener('drop', (e) => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  void loadFile(e.dataTransfer?.files[0]);
+});
+
+// the model materializes when the section comes into view
+new IntersectionObserver(
+  ([entry]) => {
+    if (showcase === entry.isIntersecting) return;
+    showcase = entry.isIntersecting;
+    sky.set(liveOptions(), true);
+  },
+  { threshold: 0.35 },
+).observe(showcaseEl);
 
 apply();

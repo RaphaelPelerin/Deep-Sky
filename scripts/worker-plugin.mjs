@@ -2,9 +2,12 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 
-const VIRTUAL = 'virtual:deep-sky-worker';
-const RESOLVED = '\0' + VIRTUAL;
-const ENTRY = fileURLToPath(new URL('../src/engine/worker.ts', import.meta.url));
+/** virtual module → worker script entry */
+const ENTRIES = {
+  'virtual:deep-sky-worker': '../src/engine/worker.ts',
+  // the 3D layer, loaded into the worker on demand
+  'virtual:deep-sky-models-worker': '../src/models/worker.ts',
+};
 
 /**
  * Rollup-compatible plugin (works in tsdown/Rolldown and Vite).
@@ -17,12 +20,13 @@ export function deepSkyWorker({ minify = true } = {}) {
   return {
     name: 'deep-sky-worker',
     resolveId(id) {
-      return id === VIRTUAL ? RESOLVED : null;
+      return id in ENTRIES ? '\0' + id : null;
     },
     async load(id) {
-      if (id !== RESOLVED) return null;
+      const entry = id.startsWith('\0') && ENTRIES[id.slice(1)];
+      if (!entry) return null;
       const result = await build({
-        entryPoints: [ENTRY],
+        entryPoints: [fileURLToPath(new URL(entry, import.meta.url))],
         bundle: true,
         write: false,
         format: 'iife',
