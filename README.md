@@ -50,7 +50,8 @@ Plus `graphite`, a quiet monochrome sky for product UIs. Every preset has a dark
 | ![Iridescent](.github/assets/3d-iridescent.webp) | ![Neon wire](.github/assets/3d-wire.webp) | ![Nebula](.github/assets/3d-nebula.webp) |
 | `iridescent` | `wire` | `nebula` |
 
-Hang a model in the sky, and the sky lights it:
+Hang a model in the sky, and the sky lights it. **Try yours in the [playground](https://deep-sky-omega.vercel.app/#models)**: drop a `.glb` anywhere on the page, or paste its URL.
+
 
 - **The roaming light is a real light.** It follows the cursor (or wanders), and its highlights slide across the surface.
 - **The aurora colors are rim lights**, and the nebula frame is what metals reflect and glass refracts, split into colors at the edges.
@@ -406,6 +407,7 @@ npm test             # unit tests
 npm run build        # library → dist/
 npm run build:demo   # site → demo/dist
 npm run capture      # README images and social card (needs a local Chrome; -- --gpu is faster)
+npm run sample       # the demo's sample model → demo/public/models/deep-sky-star.glb
 npm run record       # 30 s demo video → .capture/deep-sky.mp4 (-- --gpu for a smooth one)
 ```
 

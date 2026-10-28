@@ -11,7 +11,13 @@ const JSON_CHUNK = 0x4e4f534a;
 const BIN_CHUNK = 0x004e4942;
 
 async function get(url: string): Promise<Response> {
-  const res = await fetch(url);
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch {
+    // fetch says nothing more: offline, wrong host, or a server without CORS
+    throw new Error(`could not download ${url} (network error, or the server does not allow CORS)`);
+  }
   if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
   return res;
 }

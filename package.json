@@ -85,7 +85,8 @@
     "test": "vitest run",
     "capture": "node scripts/capture.mjs",
     "record": "node scripts/record.mjs",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build",
+    "sample": "node scripts/make-sample.mjs"
   },
   "peerDependencies": {
     "react": ">=17",

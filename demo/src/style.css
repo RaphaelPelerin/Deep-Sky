@@ -1258,8 +1258,7 @@ input[type='range']::-moz-range-thumb {
 }
 
 .drop:hover,
-.drop:focus-within,
-.drop.over {
+.drop:focus-within {
   border-color: color-mix(in oklab, var(--accent) 70%, transparent);
   background: color-mix(in oklab, var(--accent) 8%, transparent);
 }
@@ -1291,6 +1290,91 @@ input[type='range']::-moz-range-thumb {
   margin: 0;
   color: var(--fg-3);
   font-size: 12.5px;
+}
+
+/* your own model, in the playground */
+.own-model {
+  display: grid;
+  gap: 8px;
+  padding: 2px 0 6px;
+}
+
+.own-model .btn {
+  position: relative;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.own-model .btn input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.own-model .btn:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.text-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  background: var(--chip);
+  color: var(--fg);
+  font: 500 13px var(--font);
+}
+
+.text-input::placeholder {
+  color: var(--fg-3);
+}
+
+.own-model .group-note {
+  margin: 0;
+}
+
+/* dragging a file over the page */
+.drop-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in oklab, var(--bg, #000) 35%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.drop-hint.show {
+  opacity: 1;
+}
+
+.drop-hint > div {
+  display: grid;
+  gap: 6px;
+  padding: 34px 44px;
+  border: 2px dashed color-mix(in oklab, var(--accent) 75%, transparent);
+  border-radius: 22px;
+  background: var(--glass-2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  text-align: center;
+}
+
+.drop-hint strong {
+  font-size: 1.35rem;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+}
+
+.drop-hint span {
+  color: var(--fg-2);
+  font-size: 14px;
 }
 
 .select {

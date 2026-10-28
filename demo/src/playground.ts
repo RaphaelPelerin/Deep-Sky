@@ -24,6 +24,11 @@ export interface PlaygroundHost {
   mainThread: Flag;
   /** the model shows on every section, not only the 3D one */
   pinned: Flag;
+  /** your own model: a picked file or a URL */
+  loadModelFile(file: File | undefined): void;
+  loadModelUrl(url: string): void;
+  /** the name of a model that is not in the shape list */
+  modelLabel(src: unknown): string;
 }
 
 interface Flag {
@@ -102,6 +107,7 @@ const MODEL_GROUP: Group = {
       ['gem', 'Gem'],
       ['planet', 'Planet'],
       ['cube', 'Cube'],
+      ['/models/deep-sky-star.glb', '✦ Star (.glb)'],
     ]),
     select('models.0.material', 'Surface', [
       ['chrome', 'Chrome'],
@@ -314,6 +320,7 @@ export function createPlayground(panel: HTMLElement, host: PlaygroundHost) {
         const v = c.get(host.state());
         const known = c.options!.some(([value]) => value === v);
         other.hidden = known;
+        if (!known) other.textContent = host.modelLabel(v);
         sel.value = known ? String(v) : '';
       });
       row.append(h('span', 'ctl-label', c.label), sel);
@@ -387,7 +394,32 @@ export function createPlayground(panel: HTMLElement, host: PlaygroundHost) {
 
   // 3D: its switch shows the model on every section
   const model = h('div', 'group-body');
-  model.append(...MODEL_GROUP.controls.map(control));
+  const [shapeControl, ...modelControls] = MODEL_GROUP.controls.map(control);
+  // your own model: a file from the device, or a URL (CORS needed; the share link keeps it)
+  const own = h('div', 'own-model');
+  const pick = h('label', 'btn small');
+  const input = h('input');
+  input.type = 'file';
+  input.accept = '.glb,.gltf,model/gltf-binary,model/gltf+json';
+  input.addEventListener('change', () => {
+    host.loadModelFile(input.files?.[0]);
+    input.value = '';
+  });
+  pick.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v3.5A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V14"/></svg>';
+  pick.append('Your .glb / .gltf', input);
+  const url = h('form', 'url-form');
+  const field = h('input', 'text-input');
+  field.type = 'url';
+  field.placeholder = 'or a model URL, then Enter';
+  field.setAttribute('aria-label', 'Model URL');
+  url.append(field);
+  url.addEventListener('submit', (e) => {
+    e.preventDefault();
+    host.loadModelUrl(field.value);
+  });
+  own.append(pick, url, h('p', 'group-note', 'Or drop a file anywhere on the page. Files stay on your device.'));
+  model.append(shapeControl, own, ...modelControls);
   const modelGroup = group(MODEL_GROUP.title, false, model);
   modelGroup
     .querySelector('summary')!
