@@ -439,9 +439,10 @@ export class Engine {
       this.time += Math.min(dt, 0.1) * this.cfg.speed;
       const busy = t < this.busyUntil;
       const active = t - this.lastPointer < 5;
-      // particles: 60 fps while the pointer moves (or on high quality), 30 otherwise;
-      // shader: the configured rate, 12 fps while the page is busy
-      const fxStep = !busy && (active || this.cfg.fps > 45) ? 1 / 62 : 1 / 31;
+      // particles: 60 fps while the pointer moves, the grid scrolls (30 fps makes it judder)
+      // or on high quality, 30 otherwise; shader: the configured rate, 12 fps while the page is busy
+      const scrolling = this.cfg.grid > 0 && this.cfg.gridSpeed > 0;
+      const fxStep = !busy && (active || scrolling || this.cfg.fps > 45) ? 1 / 62 : 1 / 31;
       if (t - this.lastFx >= fxStep) {
         const k = Math.min(0.05, Math.max(0.001, t - this.lastFx)) * 60;
         this.lastFx = t;
