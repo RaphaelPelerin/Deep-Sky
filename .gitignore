@@ -1,0 +1,9 @@
+node_modules
+dist
+demo/dist
+*.log
+.DS_Store
+.vercel
+.vscode/*
+!.vscode/extensions.json
+.capture
