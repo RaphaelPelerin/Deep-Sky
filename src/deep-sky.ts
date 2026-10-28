@@ -101,21 +101,7 @@ export function mountDeepSky(
   root.setAttribute('data-deep-sky', '');
   let glCanvas = newGlCanvas();
   let fxCanvas = el('canvas', LAYER);
-  // perspective floor: a CSS layer, animated by the compositor
-  const mask = 'linear-gradient(to top, #000, transparent 80%)';
-  const floor = el('div', {
-    position: 'absolute',
-    left: '-50%',
-    right: '-50%',
-    bottom: '0',
-    overflow: 'hidden',
-    'transform-origin': '50% 100%',
-    'mask-image': mask,
-    '-webkit-mask-image': mask,
-  });
-  const grid = el('div', { position: 'absolute', left: '0', right: '0', bottom: '0' });
-  floor.append(grid);
-  root.append(glCanvas, floor, fxCanvas);
+  root.append(glCanvas, fxCanvas);
   const parent = ctx.layerParent ?? (container === doc.documentElement ? doc.body : container);
   parent.prepend(root);
 
@@ -135,8 +121,6 @@ export function mountDeepSky(
   let pointerInside = false;
   let fallback: HTMLDivElement | null = null;
   let fallbackAnim: Animation | null = null;
-  let gridAnim: Animation | null = null;
-  let gridSize = 0;
   let resolveReady!: () => void;
   const ready = new Promise<void>((resolve) => (resolveReady = resolve));
 
@@ -289,45 +273,11 @@ export function mountDeepSky(
 
   // ---------- DOM layers ----------
 
-  const syncGrid = () => {
-    const g = r.grid;
-    if (!g.enabled || typeof grid.animate !== 'function') {
-      gridAnim?.cancel();
-      gridAnim = null;
-      return;
-    }
-    if (!gridAnim || gridSize !== g.size) {
-      gridAnim?.cancel();
-      gridSize = g.size;
-      gridAnim = grid.animate(
-        [{ transform: 'translateY(0)' }, { transform: `translateY(${g.size}px)` }],
-        { duration: (2400 * g.size) / 64, iterations: Infinity, easing: 'linear' },
-      );
-    }
-    const rate = r.speed * g.speed;
-    if (isAnimated() && isVisible() && rate > 0) {
-      gridAnim.updatePlaybackRate(rate);
-      gridAnim.play();
-    } else {
-      gridAnim.pause();
-    }
-  };
-
   const applyDom = () => {
     const p = isDark() ? r.palette.dark : r.palette.light;
-    const g = r.grid;
     root.style.position = (r.fixed ?? isPage) ? 'fixed' : 'absolute';
     root.style.zIndex = String(r.zIndex);
     root.style.backgroundColor = p.background;
-    floor.style.display = g.enabled ? 'block' : 'none';
-    floor.style.height = `${Math.min(1, Math.max(0.05, g.height)) * 100}%`;
-    floor.style.transform = `perspective(700px) rotateX(${g.tilt}deg)`;
-    floor.style.opacity = String(g.opacity);
-    grid.style.top = `${-g.size}px`;
-    grid.style.backgroundImage =
-      `linear-gradient(to right, ${p.grid} 1px, transparent 1px), ` +
-      `linear-gradient(to bottom, ${p.grid} 1px, transparent 1px)`;
-    grid.style.backgroundSize = `${g.size}px ${g.size}px`;
     if (fallback) {
       const [a, b, c] = p.nebula;
       fallback.style.background =
@@ -337,7 +287,6 @@ export function mountDeepSky(
       if (isAnimated()) fallbackAnim?.play();
       else fallbackAnim?.pause();
     }
-    syncGrid();
   };
 
   // ---------- size & pointer ----------
@@ -421,7 +370,6 @@ export function mountDeepSky(
 
   const sendState = () => {
     send({ type: 'visible', on: isVisible() });
-    syncGrid();
   };
   const intersection =
     typeof IntersectionObserver === 'undefined'
@@ -521,7 +469,6 @@ export function mountDeepSky(
     dprQuery?.removeEventListener('change', onDpr);
     for (const [target, type, fn, o] of listeners) target.removeEventListener(type, fn, o);
     if (scrollFrame) win.cancelAnimationFrame(scrollFrame);
-    gridAnim?.cancel();
     fallbackAnim?.cancel();
     root.remove();
     for (const undo of restore.reverse()) undo();

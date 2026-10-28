@@ -132,6 +132,7 @@ function mixPalette(a: EnginePalette, b: EnginePalette, t: number): EnginePalett
     spotlight: [mix(a.spotlight[0], b.spotlight[0]), mix(a.spotlight[1], b.spotlight[1])],
     lines: mix(a.lines, b.lines),
     meteor: mix(a.meteor, b.meteor),
+    grid: [...mix([a.grid[0], a.grid[1], a.grid[2]], [b.grid[0], b.grid[1], b.grid[2]]), a.grid[3] + (b.grid[3] - a.grid[3]) * t],
   };
 }
 
@@ -663,6 +664,70 @@ export class Engine {
     this.spriteKey = key;
   }
 
+  /**
+   * Perspective floor, projected by hand: a plane tilted back around the bottom edge, seen
+   * through `perspective(700px)`. Drawn with sub-pixel coverage so lines glide instead of
+   * blinking (a CSS 3D layer samples its 1px lines without filtering).
+   */
+  private renderGrid(ctx: Ctx2D, pal: EnginePalette) {
+    const cfg = this.cfg;
+    const { w, h } = this;
+    const [cr, cg, cb, ca] = pal.grid;
+    const color = `${Math.round(cr * 255)},${Math.round(cg * 255)},${Math.round(cb * 255)}`;
+    const alpha = ca * cfg.grid;
+    if (alpha <= 0) return;
+    const size = cfg.gridSize;
+    const tilt = (cfg.gridTilt * Math.PI) / 180;
+    const sin = Math.sin(tilt);
+    const cos = Math.cos(tilt);
+    const d = 700;
+    // v: distance from the bottom edge along the plane; lines fade out at 80% of its height
+    const far = cfg.gridHeight * h * 0.8;
+    const scale = (v: number) => d / (d + v * sin);
+    const yAt = (v: number) => h - v * cos * scale(v);
+    const top = yAt(far);
+    if (h - top < 1) return;
+
+    const fade = ctx.createLinearGradient(0, h, 0, top);
+    for (let i = 0; i <= 8; i++) {
+      const v = (far * i) / 8;
+      fade.addColorStop((h - yAt(v)) / (h - top), `rgba(${color},${alpha * (1 - i / 8)})`);
+    }
+
+    // rails: quads that narrow with distance, 1 px wide at the bottom edge
+    const sFar = scale(far);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = fade;
+    ctx.beginPath();
+    const half = Math.ceil(w / size);
+    for (let j = -half; j <= half; j++) {
+      const x = j * size;
+      const xb = w / 2 + x;
+      const xt = w / 2 + x * sFar;
+      if (Math.max(xb, xt) < -1 || Math.min(xb, xt) > w + 1) continue;
+      ctx.moveTo(xb - 0.5, h);
+      ctx.lineTo(xb + 0.5, h);
+      ctx.lineTo(xt + 0.5 * sFar, top);
+      ctx.lineTo(xt - 0.5 * sFar, top);
+      ctx.closePath();
+    }
+    ctx.fill();
+
+    // crossbars: scroll towards the viewer (26.7 px/s at speed 1, like the old CSS floor)
+    const offset = (this.time * 26.67 * cfg.gridSpeed) % size;
+    for (let v = (size - offset) % size; v < far; v += size) {
+      const s = scale(v);
+      // screen thickness of a 1 px line at this depth, and the gap to the next one
+      const thick = cos * s * s;
+      const gap = thick * size;
+      const a = alpha * (1 - v / far) * Math.min(1, thick) * Math.min(1, gap / 4);
+      if (a < 0.002) continue;
+      ctx.fillStyle = `rgba(${color},${a})`;
+      const t = Math.max(1, thick);
+      ctx.fillRect(0, yAt(v) - t / 2, w, t);
+    }
+  }
+
   private renderFx(clock: number, k: number) {
     const ctx = this.ctx;
     if (!ctx) return;
@@ -673,6 +738,8 @@ export class Engine {
     if (this.spriteKey !== key) this.buildSprites(pal, key);
 
     ctx.clearRect(0, 0, this.w, this.h);
+    ctx.globalCompositeOperation = 'source-over';
+    if (cfg.grid > 0) this.renderGrid(ctx, pal);
     ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
     const strength = dark ? 1 : 0.55;
     const m = this.mouse;

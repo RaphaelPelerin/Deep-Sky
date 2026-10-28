@@ -299,11 +299,10 @@ createDeepSky(document.body, { worker: workerUrl });
 flowchart LR
   subgraph main["Main thread"]
     A["createDeepSky()"] --> B["size · pointer · clicks · theme"]
-    A --> C["CSS grid floor<br/>(compositor-animated)"]
   end
   subgraph worker["Web Worker"]
     D["WebGL shader<br/>nebula · aurora · beams · light · shockwaves"]
-    E["2D particles<br/>stars · constellations · meteors · spotlight"]
+    E["2D particles<br/>grid · stars · constellations · meteors · spotlight"]
   end
   B -- postMessage --> D
   B -- postMessage --> E
@@ -313,7 +312,7 @@ flowchart LR
 
 - **The shader** layers a domain-warped fractal noise nebula ([technique](https://iquilezles.org/articles/warp/)), three aurora curtains with vertical streaks, swaying light beams, a light that follows the cursor through a small lens, up to four simultaneous shockwaves, a light sweep, grain and a vignette. A nebula is soft by nature, so it renders at half resolution and 30 fps, then gets upscaled.
 - **The particle layer** draws stars at different depths (parallax), a magnetic swirl around the cursor, constellation lines, shooting stars and a spotlight, all from pre-rendered sprites.
-- **The grid** is plain CSS: a perspective plane animated by the compositor, so it costs nothing.
+- **The grid** is a perspective plane projected by hand on the particle layer, with sub-pixel antialiasing so its lines glide instead of shimmering.
 - **Fallbacks:** worker + OffscreenCanvas, then the same engine on the main thread (loaded on demand), then CSS gradients when WebGL is missing. Lost WebGL contexts are restored.
 
 ## Performance

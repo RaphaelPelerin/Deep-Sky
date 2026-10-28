@@ -195,6 +195,7 @@ function enginePalette(p: Palette): EnginePalette {
     spotlight: [rgb(p.spotlight[0]), rgb(p.spotlight[1])],
     lines: rgb(p.lines),
     meteor: rgb(p.meteor),
+    grid: parseColor(p.grid),
   };
 }
 
@@ -229,6 +230,11 @@ export function toEngineConfig(r: ResolvedOptions): EngineConfig {
     fieldRadius: clamp(r.cursor.fieldRadius, 20, 1000),
     constellations: r.cursor.enabled && r.cursor.constellations,
     linkDistance: clamp(r.cursor.linkDistance, 10, 500),
+    grid: on(r.grid.enabled, clamp(r.grid.opacity, 0, 1)),
+    gridSize: clamp(r.grid.size, 8, 400),
+    gridSpeed: clamp(r.grid.speed, 0, 10),
+    gridHeight: clamp(r.grid.height, 0.05, 1),
+    gridTilt: clamp(r.grid.tilt, 0, 85),
     click: r.click,
     scale: clamp(r.quality.scale, 0.1, 2),
     minScale: clamp(Math.min(r.quality.minScale, r.quality.scale), 0.05, 2),

@@ -5,6 +5,7 @@
 
 /** linear RGB-ish color as 0..1 floats (sRGB values, no conversion) */
 export type RGB = [number, number, number];
+export type RGBA = [number, number, number, number];
 
 export interface EnginePalette {
   background: RGB;
@@ -16,6 +17,7 @@ export interface EnginePalette {
   spotlight: [RGB, RGB];
   lines: RGB;
   meteor: RGB;
+  grid: RGBA;
 }
 
 export type EngineClick = 'shockwave' | 'ring' | 'none';
@@ -49,6 +51,12 @@ export interface EngineConfig {
   fieldRadius: number;
   constellations: boolean;
   linkDistance: number;
+  /** perspective floor: opacity (0 = off), cell size in px, scroll speed, height (0..1), tilt in degrees */
+  grid: number;
+  gridSize: number;
+  gridSpeed: number;
+  gridHeight: number;
+  gridTilt: number;
   click: EngineClick;
   scale: number;
   minScale: number;
