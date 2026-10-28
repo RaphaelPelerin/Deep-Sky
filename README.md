@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://deep-sky.vercel.app"><img src=".github/assets/hero.webp" alt="Deep Sky behind a landing page: violet nebula, green aurora and glowing stars" width="100%" /></a>
+<a href="https://deep-sky-omega.vercel.app"><img src=".github/assets/hero.webp" alt="Deep Sky behind a landing page: violet nebula, green aurora and glowing stars" width="100%" /></a>
 
 # ✦ deep-sky
 
@@ -9,7 +9,7 @@
 A living, GPU-rendered background for the web: a nebula, northern lights, light beams and stars that react to your cursor.<br />
 It renders in a Web Worker, so your app never drops a frame.
 
-**[Live demo & playground](https://deep-sky.vercel.app)** · [Install](#install) · [Frameworks](#frameworks) · [Options](#options) · [How it works](#how-it-works)
+**[Live demo & playground](https://deep-sky-omega.vercel.app)** · [Install](#install) · [Frameworks](#frameworks) · [Options](#options) · [How it works](#how-it-works)
 
 [![npm](https://img.shields.io/npm/v/deep-sky?color=8ab4ff&label=npm)](https://www.npmjs.com/package/deep-sky)
 [![gzip](https://img.shields.io/badge/gzip-14%20kB-8ab4ff)](#performance)
@@ -39,7 +39,7 @@ It renders in a Web Worker, so your app never drops a frame.
 | ![Abyss](.github/assets/abyss.webp) | ![Synthwave](.github/assets/synthwave.webp) | ![Daybreak](.github/assets/daybreak.webp) |
 | `abyss` | `synthwave` | `daybreak` (light) |
 
-Plus `graphite`, a quiet monochrome sky for product UIs. Every preset has a dark and a light palette. Build your own in the [playground](https://deep-sky.vercel.app) and copy the generated code.
+Plus `graphite`, a quiet monochrome sky for product UIs. Every preset has a dark and a light palette. Build your own in the [playground](https://deep-sky-omega.vercel.app) and copy the generated code.
 
 ## Install
 
