@@ -607,15 +607,56 @@ addEventListener('drop', (e) => {
   dropHint.classList.remove('show');
   void loadFile(e.dataTransfer?.files[0]);
 });
-const showcaseEl = $('#models');
+// ---------- sections hold still for a moment once in full view ----------
 
-// the model materializes as the section scrolls in, and dissolves as it scrolls out
+const NAV = 64;
+const holds = [...document.querySelectorAll<HTMLElement>('.hold')];
+let holdFrame = 0;
+/** a section that fits the screen sticks, centered below the nav, while its track scrolls by */
+function layoutHolds() {
+  holdFrame = 0;
+  // the small viewport on phones: steady while the address bar comes and goes
+  const room = document.documentElement.clientHeight - NAV;
+  for (const track of holds) {
+    const section = track.firstElementChild as HTMLElement;
+    const top = section.getBoundingClientRect().top;
+    const start = section.firstElementChild!.getBoundingClientRect().top - top;
+    const content = section.lastElementChild!.getBoundingClientRect().bottom - top - start;
+    const on = innerWidth >= Number(track.dataset.holdFrom ?? 0) && content <= room - 48;
+    track.classList.toggle('holding', on);
+    if (!on) {
+      track.style.removeProperty('--stick');
+      track.style.scrollMarginTop = '';
+      continue;
+    }
+    const stick = Math.round(NAV + (room - content) / 2 - start);
+    track.style.setProperty('--stick', `${stick}px`);
+    // links land halfway through the hold (80px: the page's scroll-padding-top)
+    const hold = track.offsetHeight - section.offsetHeight;
+    track.style.scrollMarginTop = `${stick - 80 - hold / 2}px`;
+  }
+}
+const onHoldChange = () => (holdFrame ||= requestAnimationFrame(layoutHolds));
+const holdObserver = new ResizeObserver(onHoldChange);
+for (const track of holds) holdObserver.observe(track.firstElementChild!);
+addEventListener('resize', onHoldChange);
+layoutHolds();
+
+const showcaseTrack = $('#models');
+const showcaseEl = $('.models');
+
+// the model materializes as the section scrolls in (and while it holds still, on wide screens),
+// and dissolves as it scrolls out
 let revealFrame = 0;
 function trackReveal() {
   revealFrame = 0;
-  const r = showcaseEl.getBoundingClientRect();
-  const coverage = Math.max(0, Math.min(innerHeight, r.bottom) - Math.max(0, r.top)) / innerHeight;
-  const t = Math.min(1, Math.max(0, (coverage - 0.3) / 0.45));
+  const h = innerHeight;
+  const r = showcaseTrack.getBoundingClientRect();
+  // scroll distance the section stays pinned: 0 on small screens
+  const pin = r.height - showcaseEl.offsetHeight;
+  const arrive = (0.6 * h - r.top) / (0.4 * h + 0.5 * pin);
+  const leave = (r.bottom / h - 0.3) / 0.45;
+  const t = Math.min(1, Math.max(0, Math.min(arrive, leave)));
   // steps of 5%: the sky eases between them, without an update per scroll event
   const next = Math.round(t * t * (3 - 2 * t) * 20) / 20;
   showcase = next > 0;

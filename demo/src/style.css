@@ -469,6 +469,21 @@ pre {
   padding: 130px 20px 0;
 }
 
+/*
+ * A section that fits the screen holds still for a moment once in full view: it sticks (at a
+ * --stick set by main.ts, which centers it) while the empty space after it scrolls by.
+ */
+.hold.holding > .section {
+  position: sticky;
+  top: var(--stick, 0px);
+}
+
+.hold.holding::after {
+  content: '';
+  display: block;
+  height: var(--hold, 32svh);
+}
+
 .eyebrow {
   margin: 0 0 12px;
   color: var(--accent);
@@ -1221,6 +1236,11 @@ input[type='range']::-moz-range-thumb {
 }
 
 /* ---------- 3D showcase: the copy on the left, the model on the right of the sky ---------- */
+
+/* held longer: the model materializes meanwhile */
+#models {
+  --hold: 70svh;
+}
 
 .models {
   min-height: 100svh;
