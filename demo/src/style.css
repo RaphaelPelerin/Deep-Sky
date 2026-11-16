@@ -575,6 +575,7 @@ pre {
   font: inherit;
   text-align: left;
   cursor: pointer;
+  user-select: none;
   transition:
     border-color 0.25s,
     background-color 0.25s,
@@ -589,24 +590,57 @@ pre {
   transform: translateY(-2px);
 }
 
-.layer.off:not(.active) {
+.layer.off:not(.active, :hover) {
   opacity: 0.55;
 }
 
 .layer-name {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 15px;
   font-weight: 600;
 }
 
-.layer-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+/* a checkbox in the layer's color: filled and glowing when on, an outline when off */
+.layer-check {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1.5px solid var(--dot, var(--accent));
   background: var(--dot, var(--accent));
-  box-shadow: 0 0 12px var(--dot, var(--accent));
+  box-shadow: 0 0 14px -2px var(--dot, var(--accent));
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.layer-check svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: var(--bg);
+  /* white on a dark layer color, near black on a light one */
+  stroke: oklch(from var(--dot, var(--accent)) clamp(0.16, (0.66 - l) * 100, 1) 0 0);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 12;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.25s ease-out;
+}
+
+.layer.off .layer-check {
+  background: transparent;
+  box-shadow: none;
+}
+
+.layer.off .layer-check svg {
+  stroke-dashoffset: 12;
+  transition-duration: 0.12s;
 }
 
 .layer-desc {

@@ -228,22 +228,28 @@ async function loadStars() {
 }
 void loadStars();
 
-// ---------- layers: hover one to see it alone ----------
+// ---------- layers: hover one to see it alone, tick it to switch it on or off ----------
 
 const layerList = $('#layer-list');
+/** the layer just switched: the whole sky shows the change until the pointer leaves it */
+let held: LayerKey | null = null;
 const layerButtons = LAYER_INFO.map(({ key, label, desc }) => {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'layer';
   b.dataset.layer = key;
-  b.innerHTML = `<span class="layer-name"><span class="layer-dot"></span>${label}</span><span class="layer-desc">${desc}</span>`;
-  const enter = () => setSolo(key);
-  const leave = () => setSolo(null);
+  b.setAttribute('role', 'checkbox');
+  b.innerHTML = `<span class="layer-name"><span class="layer-check" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.6 6.3 5 8.7l4.4-5.1"/></svg></span>${label}</span><span class="layer-desc">${desc}</span>`;
+  const enter = () => held !== key && setSolo(key);
+  const leave = () => {
+    held = null;
+    setSolo(null);
+  };
   b.addEventListener('pointerenter', (e) => e.pointerType !== 'touch' && enter());
   b.addEventListener('pointerleave', (e) => e.pointerType !== 'touch' && leave());
   b.addEventListener('focus', enter);
   b.addEventListener('blur', leave);
-  b.addEventListener('click', () => setSolo(solo === key ? null : key));
+  b.addEventListener('click', () => toggleLayer(key));
   layerList.append(b);
   return b;
 });
@@ -253,12 +259,19 @@ function setSolo(layer: LayerKey | null) {
   sky.set(liveOptions(), true);
   renderLayers();
 }
+function toggleLayer(key: Exclude<LayerKey, 'cursor'>) {
+  state[key].enabled = !state[key].enabled;
+  held = key;
+  solo = null;
+  apply();
+}
 function renderLayers() {
   const p = isDark() ? state.palette.dark : state.palette.light;
   for (const b of layerButtons) {
     const key = b.dataset.layer as LayerKey;
     b.classList.toggle('active', solo === key);
     b.classList.toggle('off', !state[key].enabled);
+    b.setAttribute('aria-checked', String(state[key].enabled));
     b.style.setProperty('--dot', layerColor(p, key));
   }
 }
