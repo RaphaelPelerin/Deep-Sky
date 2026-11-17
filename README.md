@@ -72,8 +72,9 @@ createDeepSky(document.body, {
 | --- | --- | --- |
 | `material` | `'auto'` | `'auto'` (the file's materials, chrome for shapes), `'chrome'`, `'glass'`, `'hologram'`, `'iridescent'`, `'wire'`, `'nebula'` |
 | `color` | palette | Tint; the light color of `hologram` and `wire` |
-| `x`, `y` | `0.5` | Center, as a fraction of the container (from the left, from the top) |
-| `size` | `0.5` | Largest side, as a fraction of the container height |
+| `anchor` | none | An element (or a CSS selector) the model is attached to: it moves with it, and `x`, `y`, `size` become relative to its box |
+| `x`, `y` | `0.5` | Center, as a fraction of the container or anchor (from the left, from the top) |
+| `size` | `0.5` | Largest side, as a fraction of the container or anchor height |
 | `rotation` | `[0, 0, 0]` | Starting orientation, in degrees |
 | `spin` | `18` | Degrees per second around the vertical axis |
 | `float` | `1` | Slow bobbing |
@@ -86,6 +87,21 @@ createDeepSky(document.body, {
 | `reveal` | `1` | How much of it has materialized, `0` to `1`. Changes animate (it dissolves the way it appears); `0` keeps it hidden but ready |
 
 A model that is removed dissolves away, and replacing one cross-fades between them.
+
+**Attach it to your page.** The sky stays behind the viewport, so a model stays put while the page scrolls. Give it an `anchor` and it travels with that element instead: it scrolls in with its section, sticks with a sticky one, follows CSS animations. Lay out an empty box where the model should hang, and let CSS place it:
+
+```html
+<section class="feature">
+  <div class="copy">…</div>
+  <div id="stage" style="height: 70vh"></div>
+</section>
+```
+
+```js
+createDeepSky(document.body, { models: { src: 'knot', anchor: '#stage', size: 0.8 } });
+```
+
+The anchor is measured on every frame, and the worker only hears about it when it moved. Hide the anchor (`display: none`) to hide the model.
 
 **Reveal it with the scroll.** Pass the model from the start with `reveal: 0`: its file is downloaded and its shaders compiled in the background while it stays invisible, so it appears without a hitch. Then drive `reveal` from the scroll:
 
@@ -234,7 +250,7 @@ export class DeepSkyDirective {
 </section>
 ```
 
-`<deep-sky>` fills its parent (or the viewport with the `fixed` attribute). Attributes: `preset`, `theme`, `speed`, `animate`, `click`, `quality`, `intro`, `worker`, `model` and `model-material` (one 3D model), and one per layer (`nebula="1.5"` sets the intensity, `grid="false"` hides it). Every option is available through the `options` property:
+`<deep-sky>` fills its parent (or the viewport with the `fixed` attribute). Attributes: `preset`, `theme`, `speed`, `animate`, `click`, `quality`, `intro`, `worker`, `model`, `model-material` and `model-anchor` (one 3D model), and one per layer (`nebula="1.5"` sets the intensity, `grid="false"` hides it). Every option is available through the `options` property:
 
 ```js
 document.querySelector('deep-sky').options = { stars: { density: 2 } };

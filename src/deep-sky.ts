@@ -1,7 +1,7 @@
 import workerSource from 'virtual:deep-sky-worker';
 import { toRgba } from './color';
 import type { EngineEvent, EngineInit, EngineMessage } from './engine/protocol';
-import { mergeOptions, modelKey, normalizeOptions, toEngineConfig } from './options';
+import { anchorPlace, mergeOptions, modelKey, normalizeOptions, toEngineConfig } from './options';
 import type { DeepSkyInstance, DeepSkyMode, DeepSkyOptions } from './types';
 
 interface Link {
@@ -132,7 +132,7 @@ export function mountDeepSky(
   const isVisible = () => !r.pauseWhenHidden || (inView && pageVisible);
   const send = (msg: EngineMessage) => link?.send(msg);
   const init = (): EngineInit => ({
-    config: toEngineConfig(r),
+    config: engineConfig(),
     dark: isDark(),
     animated: isAnimated(),
     stats: !!opts.onStats,
@@ -160,7 +160,49 @@ export function mountDeepSky(
   const afterLink = () => {
     if (size) send({ type: 'resize', ...size });
     send({ type: 'visible', on: isVisible() });
+    lastPlaces = '';
     void syncModels();
+  };
+
+  // ---------- anchored models ----------
+
+  const anchored = () => r.models.some((m) => m.anchor);
+  /** x, y and size of each model in the layer, from its anchor's box (NaN: not anchored) */
+  const places = () => {
+    measure();
+    return r.models.flatMap((m) => {
+      const target = typeof m.anchor === 'string' ? doc.querySelector(m.anchor) : m.anchor;
+      return target && rect.width && rect.height
+        ? anchorPlace(target.getBoundingClientRect(), rect, m)
+        : [NaN, NaN, NaN];
+    });
+  };
+  const engineConfig = () => {
+    const config = toEngineConfig(r);
+    if (!anchored()) return config;
+    const p = places();
+    config.models.forEach((m, i) => {
+      if (Number.isFinite(p[i * 3])) [m.x, m.y, m.size] = p.slice(i * 3, i * 3 + 3);
+    });
+    return config;
+  };
+
+  // anchors are measured on every frame: scrolling, sticky positioning and animations all move
+  // them; the engine only hears about it when something changed
+  let anchorFrame = 0;
+  let lastPlaces = '';
+  const followAnchors = () => {
+    anchorFrame = 0;
+    if (destroyed || !anchored()) return;
+    anchorFrame = win.requestAnimationFrame(followAnchors);
+    const p = places();
+    const key = p.map((v) => v.toFixed(4)).join();
+    if (key === lastPlaces) return;
+    lastPlaces = key;
+    send({ type: 'modelPlaces', places: p });
+  };
+  const watchAnchors = () => {
+    if (!anchorFrame && anchored()) anchorFrame = win.requestAnimationFrame(followAnchors);
   };
 
   // ---------- 3D models ----------
@@ -511,7 +553,9 @@ export function mountDeepSky(
     const hadStats = !!opts.onStats;
     opts = replace ? { ...next } : mergeOptions(opts, next);
     r = normalizeOptions(opts);
-    send({ type: 'config', config: toEngineConfig(r) });
+    send({ type: 'config', config: engineConfig() });
+    lastPlaces = '';
+    watchAnchors();
     send({ type: 'theme', dark: isDark() });
     send({ type: 'animated', on: isAnimated() });
     send({ type: 'visible', on: isVisible() });
@@ -541,6 +585,7 @@ export function mountDeepSky(
     dprQuery?.removeEventListener('change', onDpr);
     for (const [target, type, fn, o] of listeners) target.removeEventListener(type, fn, o);
     if (scrollFrame) win.cancelAnimationFrame(scrollFrame);
+    if (anchorFrame) win.cancelAnimationFrame(anchorFrame);
     fallbackAnim?.cancel();
     root.remove();
     for (const undo of restore.reverse()) undo();
@@ -549,6 +594,7 @@ export function mountDeepSky(
 
   applyDom();
   watchLongTasks();
+  watchAnchors();
   void start();
 
   return {

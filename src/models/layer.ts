@@ -283,6 +283,12 @@ export class ModelLayer implements ModelLayerApi {
 
   // ---------- assets ----------
 
+  place(models: EngineModel[]) {
+    this.instances.forEach((inst, i) => {
+      if (models[i]?.key === inst.cfg.key) inst.cfg = models[i];
+    });
+  }
+
   configure(models: EngineModel[]) {
     const prev = this.instances;
     this.instances = models.map((cfg, i) => {
@@ -607,7 +613,7 @@ export class ModelLayer implements ModelLayerApi {
     }
     this.leaving = this.leaving.filter((i) => i.appear > 0);
     const visible = [...this.instances, ...this.leaving].filter(
-      (i) => i.appear > 0.001 && this.ready(i.cfg.key),
+      (i) => i.appear > 0.001 && i.cfg.size > 0 && this.ready(i.cfg.key),
     );
     if (!visible.length) {
       if (this.drawn) {

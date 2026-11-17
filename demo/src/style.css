@@ -470,8 +470,8 @@ pre {
 }
 
 /*
- * A section that fits the screen holds still for a moment once in full view: it sticks (at a
- * --stick set by main.ts, which centers it) while the empty space after it scrolls by.
+ * Each section holds still for a moment once in view: it sticks (at a --stick set by main.ts:
+ * centered, or its end in view when taller than the screen) while the space after it scrolls by.
  */
 .hold.holding > .section {
   position: sticky;
@@ -481,7 +481,7 @@ pre {
 .hold.holding::after {
   content: '';
   display: block;
-  height: var(--hold, 32svh);
+  height: var(--hold, 40svh);
 }
 
 .eyebrow {
@@ -1246,6 +1246,44 @@ input[type='range']::-moz-range-thumb {
   min-height: 100svh;
   display: flex;
   align-items: center;
+  gap: 24px;
+}
+
+/* the model is anchored here: it scrolls, holds and leaves with the section */
+.model-stage {
+  flex: 1;
+  min-width: 0;
+  height: min(72svh, 700px);
+  pointer-events: none;
+}
+
+/* on every section: the stage stays on screen, and the model with it */
+.model-pinned .model-stage {
+  position: fixed;
+  top: 14svh;
+  right: max(20px, calc((100vw - 1160px) / 2 + 20px));
+  width: min(46vw, 560px);
+}
+
+@media (max-width: 900px) {
+  /* the model sits below the copy */
+  .models {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 0;
+  }
+  .model-stage {
+    flex: none;
+    height: 46svh;
+  }
+  .model-pinned .model-stage {
+    top: auto;
+    bottom: 3svh;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: 40svh;
+  }
 }
 
 .models-copy {
@@ -1472,11 +1510,6 @@ input[type='range']::-moz-range-thumb {
   }
   .section {
     padding-top: 96px;
-  }
-  /* the model sits below the copy */
-  .models {
-    min-height: 0;
-    padding-bottom: 46vh;
   }
   .footer {
     flex-direction: column;

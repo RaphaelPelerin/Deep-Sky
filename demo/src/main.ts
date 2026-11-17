@@ -63,18 +63,18 @@ function initialState(): ResolvedOptions {
       src,
       material: (params.get('material') as ModelMaterial | null) ?? 'chrome',
       morph: Number(params.get('morph')) || 0,
-      size: Number(params.get('size')) || 0.6,
+      size: Number(params.get('size')) || 0.7,
     };
   }
   return fresh(options);
 }
 
-/** the showcase model: right of the copy on wide screens, below it on phones */
+/** the showcase model, on the stage: right of the copy on wide screens, below it on phones */
 const defaultModel = (): ResolvedModel => ({
   ...structuredClone(modelDefaults),
   src: 'knot',
   material: 'chrome',
-  ...(innerWidth >= 900 ? { x: 0.73, y: 0.5, size: 0.5 } : { x: 0.5, y: 0.76, size: 0.32 }),
+  size: 0.7,
 });
 
 let state = initialState();
@@ -111,14 +111,20 @@ function soloed(s: ResolvedOptions, layer: LayerKey): ResolvedOptions {
   return out;
 }
 
-const liveOptions = (): DeepSkyOptions => ({
-  ...(solo ? soloed(state, solo) : state),
-  // always there, hidden until the scroll reveals it: ready ahead of time, no hitch
-  models: state.models.map((m) => ({ ...m, reveal: pinned ? 1 : reveal })),
-  worker: !mainThread,
-  onStats: hudOn ? onStats : undefined,
-  onModelError: (_, error) => toast(`Model: ${error}`),
-});
+/** where the model hangs: it follows this element as the page scrolls (fixed when pinned) */
+const modelStage = $('#model-stage');
+
+const liveOptions = (): DeepSkyOptions => {
+  root.classList.toggle('model-pinned', pinned);
+  return {
+    ...(solo ? soloed(state, solo) : state),
+    // always there, hidden until the scroll reveals it: ready ahead of time, no hitch
+    models: state.models.map((m) => ({ ...m, anchor: modelStage, reveal: pinned ? 1 : reveal })),
+    worker: !mainThread,
+    onStats: hudOn ? onStats : undefined,
+    onModelError: (_, error) => toast(`Model: ${error}`),
+  };
+};
 
 /** the state the code and links describe: the model only once the visitor used it */
 const described = (): ResolvedOptions => ({ ...state, models: touched || pinned ? state.models : [] });
@@ -612,28 +618,30 @@ addEventListener('drop', (e) => {
 const NAV = 64;
 const holds = [...document.querySelectorAll<HTMLElement>('.hold')];
 let holdFrame = 0;
-/** a section that fits the screen sticks, centered below the nav, while its track scrolls by */
+/**
+ * Each section sticks while the space after it in its track scrolls by: centered below the nav
+ * when it fits the screen, else once its end is in view.
+ */
 function layoutHolds() {
   holdFrame = 0;
   // the small viewport on phones: steady while the address bar comes and goes
-  const room = document.documentElement.clientHeight - NAV;
+  const h = document.documentElement.clientHeight;
+  const room = h - NAV;
   for (const track of holds) {
     const section = track.firstElementChild as HTMLElement;
     const top = section.getBoundingClientRect().top;
-    const start = section.firstElementChild!.getBoundingClientRect().top - top;
-    const content = section.lastElementChild!.getBoundingClientRect().bottom - top - start;
-    const on = innerWidth >= Number(track.dataset.holdFrom ?? 0) && content <= room - 48;
-    track.classList.toggle('holding', on);
-    if (!on) {
-      track.style.removeProperty('--stick');
-      track.style.scrollMarginTop = '';
-      continue;
-    }
-    const stick = Math.round(NAV + (room - content) / 2 - start);
+    // what the section shows: its children, side by side or stacked
+    const boxes = [...section.children].map((c) => c.getBoundingClientRect());
+    const start = Math.min(...boxes.map((b) => b.top)) - top;
+    const content = Math.max(...boxes.map((b) => b.bottom)) - top - start;
+    const fits = content <= room - 48;
+    const stick = Math.round(fits ? NAV + (room - content) / 2 - start : h - 32 - start - content);
+    track.classList.add('holding');
     track.style.setProperty('--stick', `${stick}px`);
-    // links land halfway through the hold (80px: the page's scroll-padding-top)
+    // links land halfway through a centered hold (80px: the page's scroll-padding-top), and at
+    // the start of a taller section
     const hold = track.offsetHeight - section.offsetHeight;
-    track.style.scrollMarginTop = `${stick - 80 - hold / 2}px`;
+    track.style.scrollMarginTop = fits ? `${stick - 80 - hold / 2}px` : '';
   }
 }
 const onHoldChange = () => (holdFrame ||= requestAnimationFrame(layoutHolds));
@@ -645,14 +653,14 @@ layoutHolds();
 const showcaseTrack = $('#models');
 const showcaseEl = $('.models');
 
-// the model materializes as the section scrolls in (and while it holds still, on wide screens),
+// the model materializes as the section scrolls in and while it holds still,
 // and dissolves as it scrolls out
 let revealFrame = 0;
 function trackReveal() {
   revealFrame = 0;
   const h = innerHeight;
   const r = showcaseTrack.getBoundingClientRect();
-  // scroll distance the section stays pinned: 0 on small screens
+  // scroll distance the section holds still
   const pin = r.height - showcaseEl.offsetHeight;
   const arrive = (0.6 * h - r.top) / (0.4 * h + 0.5 * pin);
   const leave = (r.bottom / h - 0.3) / 0.45;

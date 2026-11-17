@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MATERIALS } from '../src/engine/protocol';
 import { normalize, shape, unweld } from '../src/models/geometry';
 import { parseGltf } from '../src/models/gltf';
-import { modelDefaults, modelKey, normalizeOptions, toEngineConfig } from '../src/options';
+import { anchorPlace, modelDefaults, modelKey, normalizeOptions, toEngineConfig } from '../src/options';
 
 describe('models options', () => {
   it('has none by default', () => {
@@ -52,6 +52,37 @@ describe('models options', () => {
     expect(config(0)).toBe(0);
     expect(config(4)).toBe(1);
     expect(config(-1)).toBe(0);
+  });
+
+  it('keeps the anchor as given', () => {
+    expect(normalizeOptions({ models: 'orb' }).models[0].anchor).toBeNull();
+    const anchor = { tagName: 'DIV' } as unknown as Element;
+    expect(normalizeOptions({ models: { src: 'orb', anchor } }).models[0].anchor).toBe(anchor);
+    expect(normalizeOptions({ models: { src: 'orb', anchor: '#stage' } }).models[0].anchor).toBe('#stage');
+  });
+});
+
+describe('anchorPlace', () => {
+  const sky = { left: 0, top: 0, width: 1000, height: 800 };
+  const model = { x: 0.5, y: 0.5, size: 0.5 };
+
+  it('centers the model on its anchor, sized by the anchor height', () => {
+    expect(anchorPlace({ left: 600, top: 200, width: 300, height: 400 }, sky, model)).toEqual([0.75, 0.5, 0.25]);
+  });
+
+  it('places it relative to the anchor box, and to a sky that is not at the origin', () => {
+    const offsetSky = { left: 100, top: 50, width: 1000, height: 800 };
+    const [x, y] = anchorPlace({ left: 100, top: 50, width: 200, height: 400 }, offsetSky, { ...model, x: 0, y: 1 });
+    expect([x, y]).toEqual([0, 0.5]);
+  });
+
+  it('follows an anchor scrolled off screen, within bounds', () => {
+    expect(anchorPlace({ left: 0, top: -400, width: 100, height: 400 }, sky, model)[1]).toBe(-0.25);
+    expect(anchorPlace({ left: 0, top: -9000, width: 100, height: 400 }, sky, model)[1]).toBe(-2);
+  });
+
+  it('hides the model when the anchor has no size', () => {
+    expect(anchorPlace({ left: 0, top: 0, width: 0, height: 0 }, sky, model)[2]).toBe(0);
   });
 });
 

@@ -151,11 +151,17 @@ export interface ModelOptions {
   material?: ModelMaterial;
   /** tint, any CSS color; the light color of 'hologram' and 'wire' (null: the palette's) */
   color?: Color | null;
-  /** center, fraction of the container from the left (default 0.5) */
+  /**
+   * An element the model is attached to, or a CSS selector: the model moves with it (scrolling,
+   * sticky positioning, animations…), and `x`, `y` and `size` are relative to its box instead of
+   * the container. (default: none)
+   */
+  anchor?: Element | string | null;
+  /** center, fraction of the container (or anchor) from the left (default 0.5) */
   x?: number;
-  /** center, fraction of the container from the top (default 0.5) */
+  /** center, fraction of the container (or anchor) from the top (default 0.5) */
   y?: number;
-  /** largest side, fraction of the container height (default 0.5) */
+  /** largest side, fraction of the container (or anchor) height (default 0.5) */
   size?: number;
   /** starting orientation in degrees, [x, y, z] */
   rotation?: [number, number, number];
@@ -261,7 +267,10 @@ export type DeepSkyPreset = Omit<
 };
 
 /** A model with every default applied */
-export type ResolvedModel = Required<Omit<ModelOptions, 'color'>> & { color: Color | null };
+export type ResolvedModel = Required<Omit<ModelOptions, 'color' | 'anchor'>> & {
+  color: Color | null;
+  anchor: Element | string | null;
+};
 
 /** Options with every default applied (what `normalizeOptions` returns) */
 export interface ResolvedOptions {

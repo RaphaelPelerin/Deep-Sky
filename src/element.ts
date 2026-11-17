@@ -70,6 +70,7 @@ export class DeepSkyElement extends Base {
     'worker',
     'model',
     'model-material',
+    'model-anchor',
     ...LAYERS,
   ];
 
@@ -151,12 +152,13 @@ export class DeepSkyElement extends Base {
       const main = MAIN_SETTING[name];
       out[name] = n !== undefined && main ? { [main]: n } : value !== 'false';
     }
-    // one model: a shape name or a file URL, and its surface
+    // one model: a shape name or a file URL, its surface, and the element it is attached to
     const model = attr('model');
     if (model) {
       out.models = {
         src: model,
         ...(attr('model-material') && { material: attr('model-material') as ModelMaterial }),
+        ...(attr('model-anchor') && { anchor: attr('model-anchor') }),
       };
     }
     // the element is the positioned box: the layer just fills it

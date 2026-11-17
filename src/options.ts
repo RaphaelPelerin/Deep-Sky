@@ -68,6 +68,7 @@ export const defaults: Defaults = {
 export const modelDefaults: Omit<ResolvedModel, 'src'> = {
   material: 'auto',
   color: null,
+  anchor: null,
   x: 0.5,
   y: 0.5,
   size: 0.5,
@@ -228,6 +229,29 @@ export function mergeOptions(a: DeepSkyOptions, b: DeepSkyOptions): DeepSkyOptio
 
 const clamp = (v: number, min: number, max: number) =>
   Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : min;
+
+interface Box {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Where an anchored model goes in the sky: its `x`, `y` and `size` are relative to the anchor's
+ * box, the result to the sky's. An anchor without a size (display: none…) hides the model.
+ */
+export function anchorPlace(
+  anchor: Box,
+  sky: Box,
+  m: Pick<ResolvedModel, 'x' | 'y' | 'size'>,
+): [x: number, y: number, size: number] {
+  return [
+    clamp((anchor.left + m.x * anchor.width - sky.left) / sky.width, -2, 3),
+    clamp((anchor.top + m.y * anchor.height - sky.top) / sky.height, -2, 3),
+    anchor.width && anchor.height ? clamp((m.size * anchor.height) / sky.height, 0.01, 4) : 0,
+  ];
+}
 
 const rgb = (color: Color): RGB => {
   const [r, g, b] = parseColor(color);

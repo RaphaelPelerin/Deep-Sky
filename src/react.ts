@@ -20,9 +20,24 @@ export interface DeepSkyProps extends DeepSkyOptions {
   onReady?: (instance: DeepSkyInstance) => void;
 }
 
+/** elements (model anchors) and buffers (model files) by identity: JSON can't tell them apart */
+const ids = new WeakMap<object, number>();
+let nextId = 1;
+const identity = (value: object) => {
+  let id = ids.get(value);
+  if (id === undefined) ids.set(value, (id = nextId++));
+  return `#${id}`;
+};
+
 /** value snapshot of the options, so that new object literals on each render don't re-apply */
 const snapshot = (options: DeepSkyOptions) =>
-  JSON.stringify(options, (_key, value: unknown) => (typeof value === 'function' ? true : value));
+  JSON.stringify(options, (_key, value: unknown) =>
+    typeof value === 'function'
+      ? true
+      : (typeof Element !== 'undefined' && value instanceof Element) || value instanceof ArrayBuffer
+        ? identity(value)
+        : value,
+  );
 
 /**
  * A container with a deep-sky background behind its children.

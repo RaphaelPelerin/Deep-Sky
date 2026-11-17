@@ -122,6 +122,8 @@ export interface ModelLayerApi {
   /** called when a model finished loading (a still frame then needs a redraw) */
   onChange?: () => void;
   configure(models: EngineModel[]): void;
+  /** the same models, moved or resized (anchored models follow their element on every frame) */
+  place(models: EngineModel[]): void;
   load(key: string, asset: ModelAsset): void;
   resize(w: number, h: number, dpr: number): void;
   /** the latest shader frame, refracted and reflected by the models */
@@ -153,7 +155,9 @@ export type EngineMessage =
   | { type: 'stats'; on: boolean }
   /** worker only: start the 3D layer, from its script (main thread: Engine.attachModels) */
   | { type: 'modelsInit'; canvas: OffscreenCanvas; code: string }
-  | { type: 'modelData'; key: string; asset: ModelAsset };
+  | { type: 'modelData'; key: string; asset: ModelAsset }
+  /** x, y and size of each model, NaN for the ones that keep their config (not anchored) */
+  | { type: 'modelPlaces'; places: number[] };
 
 export interface EngineStats {
   /** particle layer frames per second */

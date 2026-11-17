@@ -272,7 +272,20 @@ export class Engine {
       case 'modelData':
         this.models?.load(msg.key, msg.asset);
         break;
+      case 'modelPlaces':
+        this.placeModels(msg.places);
+        break;
     }
+  }
+
+  /** anchored models follow their element: only their position and size change */
+  private placeModels(places: number[]) {
+    this.cfg.models = this.cfg.models.map((m, i) => {
+      const [x, y, size] = places.slice(i * 3, i * 3 + 3);
+      return Number.isFinite(x) ? { ...m, x, y, size } : m;
+    });
+    this.models?.place(this.cfg.models);
+    if (!this.running) this.renderStatic();
   }
 
   /** the 3D layer joins the loop: same clock, same lights, the sky as its backdrop */

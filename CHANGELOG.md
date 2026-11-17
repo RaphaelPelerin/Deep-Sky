@@ -3,6 +3,7 @@
 ## 0.2.0 (2026-10-28)
 
 - **3D models.** `models` hangs glTF / GLB files or built-in shapes (`orb`, `knot`, `torus`, `crystal`, `gem`, `planet`, `cube`) in the sky, lit by it: the roaming light, aurora rim lights, the nebula as reflections and refraction, shockwaves that bend them and set them spinning.
+- `anchor` attaches a model to an element (or a CSS selector): it scrolls with its section, sticks with a sticky one, and its `x`, `y` and `size` are relative to that box. Also `<deep-sky model-anchor="#stage">`.
 - `reveal` (0–1) materializes a model, or dissolves it, smoothly: drive it from the scroll. A hidden model (`reveal: 0`) is loaded and compiled ahead of time, so it appears without a hitch. Removed models dissolve away, a new shape cross-fades with the old one.
 - Shaders compile in parallel (`KHR_parallel_shader_compile`) and meshes upload ahead of time: the first 3D frame no longer freezes the sky.
 - Surfaces: `auto` (the file's PBR materials and maps), `chrome`, `glass`, `hologram`, `iridescent`, `wire`, `nebula`; liquid surfaces with `morph`.
