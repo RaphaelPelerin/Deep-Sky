@@ -132,7 +132,7 @@ export const presets: Record<PresetName, DeepSkyPreset> = {
       },
     },
     nebula: { intensity: 0.9, shimmer: 0.12 },
-    aurora: { intensity: 0.6, position: 0.62, curtains: 1, height: 0.8, waves: 0.3, streaks: 0.2, edge: 2.2 },
+    aurora: { intensity: 1.9, position: 0.43 },
     rays: { intensity: 0.75 },
     meteors: { frequency: 1.3 },
     grid: { size: 56, speed: 1.7, height: 0.58, tilt: 72, opacity: 1 },
