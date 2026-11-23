@@ -25,6 +25,7 @@ uniform vec4 uShape;      // nebula scale, aurora offset, rays spread, intro dur
 uniform vec4 uDay;        // light theme: contrast, sheen, bokeh, split
 uniform vec4 uAuroraA;    // aurora: height, speed, waves, streaks
 uniform vec4 uAuroraB;    // aurora: curtains, tilt, edge
+uniform sampler2D uNoise; // 256×256, four independent random values per texel, repeating
 uniform vec3 uBg;
 uniform vec3 uNeb0;
 uniform vec3 uNeb1;
@@ -41,20 +42,21 @@ float hash(vec2 p) {
   return fract(p.x * p.y);
 }
 
-float noise(vec2 p) {
-  vec2 i = floor(p);
+// four independent smooth value noises in one texture read, instead of four hashes each: the
+// fraction goes through a smoothstep first, so the GPU's bilinear filter interpolates like a cubic
+vec4 noise4(vec2 p) {
+  vec2 i = mod(floor(p), 256.0);
   vec2 f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
-             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+  f = f * f * (3.0 - 2.0 * f);
+  return texture2D(uNoise, (i + f + 0.5) / 256.0);
 }
 
-float fbm(vec2 p) {
-  float v = 0.0;
+vec4 fbm4(vec2 p) {
+  vec4 v = vec4(0.0);
   float a = 0.5;
   mat2 rot = mat2(0.8, -0.6, 0.6, 0.8);
   for (int i = 0; i < 4; i++) {
-    v += a * noise(p);
+    v += a * noise4(p);
     p = rot * p * 2.03 + vec2(3.1, 1.7);
     a *= 0.5;
   }
@@ -96,12 +98,12 @@ void main() {
   vec3 nebCol = uNeb0;
   if (uMix.x > 0.0) {
     vec2 np = p * uShape.x;
-    vec2 q = vec2(fbm(np * 1.3 + vec2(0.0, t * 0.035)),
-                  fbm(np * 1.3 + vec2(5.2, -t * 0.03)));
-    vec2 r = vec2(fbm(np * 1.7 + 3.0 * q + vec2(1.7, 9.2) + t * 0.045),
-                  fbm(np * 1.7 + 3.0 * q + vec2(8.3, 2.8) - t * 0.04));
-    nebField = fbm(np * 1.5 + 3.2 * r);
-    neb = smoothstep(0.26, 0.92, nebField);
+    // domain warping, three passes of four octaves: each reads two or more fields at once
+    vec2 q = fbm4(np * 1.3 + vec2(t * 0.012, t * 0.035)).xy;
+    vec2 r = fbm4(np * 1.7 + 3.0 * q + vec2(1.7, 9.2) + vec2(t * 0.045, -t * 0.04)).zw;
+    nebField = fbm4(np * 1.5 + 3.2 * r).x;
+    // thresholds matched to the earlier hash noise: the same clouds, at a fraction of the cost
+    neb = smoothstep(0.55, 0.92, nebField);
     nebCol = mix(uNeb0, uNeb1, clamp(q.x * 1.7 - 0.2, 0.0, 1.0));
     nebCol = mix(nebCol, uNeb2, clamp(r.y * r.y * 2.0, 0.0, 1.0));
     nebCol = mix(nebCol, uNeb3, clamp(r.x * r.x * r.x * 2.2, 0.0, 1.0) * 0.55);
@@ -127,7 +129,7 @@ void main() {
           + 0.015 * sin(p.x * 11.0 + ta * 0.9 + fi));
       float dy = p.y - yc;
       float band = exp(-max(dy, 0.0) * rise) * exp(-max(-dy, 0.0) * edge);
-      float streak = mix(1.0, 0.45 + 0.55 * noise(vec2(p.x * 24.0 + fi * 17.0 + ta * 0.15, ta * 0.5 + fi)), uAuroraA.w);
+      float streak = mix(1.0, 0.45 + 0.55 * noise4(vec2(p.x * 24.0 + fi * 17.0 + ta * 0.15, ta * 0.5 + fi)).y, uAuroraA.w);
       float a = band * streak * (1.0 - fi * 0.22);
       aur += a;
       aurSoft += exp(-max(dy, 0.0) * 4.0 / uAuroraA.x) * exp(-max(-dy, 0.0) * 8.0) * (1.0 - fi * 0.22);
@@ -197,7 +199,7 @@ void main() {
     light = mix(light, uNeb1, smoothstep(0.32, 1.0, f1) * 0.85 * k);
     light = mix(light, uNeb2, smoothstep(0.4, 1.0, f2) * 0.8 * k);
     light = mix(light, uNeb3, smoothstep(0.45, 1.0, f3) * 0.75 * k);
-    light = mix(light, mix(light, nebCol, 0.45), smoothstep(0.4, 0.9, nebField) * 0.3 * k);
+    light = mix(light, mix(light, nebCol, 0.45), smoothstep(0.64, 0.86, nebField) * 0.3 * k);
     light = mix(light, uNeb2, seam * 0.55 * uMix.x);
     // the folds: a slow field of its own where the colors gather and deepen
     fold = smoothstep(0.45, 1.0, 0.5 + 0.5 * sin(w.x * 0.9 - w.y * 1.4 + t * 0.035 + 2.3)) * k;
@@ -242,8 +244,9 @@ void main() {
       vec2 cell = floor(bp);
       float h = hash(cell + fi * 13.1);
       if (h > 0.68) {
-        vec2 o = (vec2(hash(cell + 1.7), hash(cell + 4.3)) - 0.5) * 0.3;
-        float r = 0.17 + 0.14 * hash(cell + 9.1);
+        // every other random value of the disc from the same hash: one per cell, not four
+        vec2 o = (fract(vec2(h * 13.7, h * 71.3)) - 0.5) * 0.3;
+        float r = 0.17 + 0.14 * fract(h * 29.1);
         float d = length(fract(bp) - 0.5 - o);
         float disc = smoothstep(r, r - 0.05, d);
         float rim = disc * smoothstep(r - 0.09, r - 0.02, d);

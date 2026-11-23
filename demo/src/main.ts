@@ -119,7 +119,12 @@ const liveOptions = (): DeepSkyOptions => {
   return {
     ...(solo ? soloed(state, solo) : state),
     // always there, hidden until the scroll reveals it: ready ahead of time, no hitch
-    models: state.models.map((m) => ({ ...m, anchor: modelStage, reveal: pinned ? 1 : reveal })),
+    // (screenshots hide the page: the model then hangs in the middle of the sky, not on the stage)
+    models: state.models.map((m) => ({
+      ...m,
+      anchor: root.classList.contains('capture') ? undefined : modelStage,
+      reveal: pinned ? 1 : reveal,
+    })),
     worker: !mainThread,
     onStats: hudOn ? onStats : undefined,
     onModelError: (_, error) => toast(`Model: ${error}`),

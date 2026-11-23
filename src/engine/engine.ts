@@ -58,6 +58,11 @@ interface Near {
   d: number;
 }
 
+/** constellation lines are drawn in this many opacities: one stroke each, not one per line */
+const LINK_LEVELS = 12;
+/** the highest opacity a constellation line gets */
+const LINK_MAX = 0.7;
+
 const UNIFORMS = [
   'uFrame',
   'uPointer',
@@ -67,6 +72,7 @@ const UNIFORMS = [
   'uDay',
   'uAuroraA',
   'uAuroraB',
+  'uNoise',
   'uShape',
   'uBg',
   'uNeb0',
@@ -197,6 +203,10 @@ export class Engine {
   private meteors: Meteor[] = [];
   private rings: Ring[] = [];
   private readonly near: Near[] = [];
+  /** reused every frame: no garbage while the pointer moves */
+  private readonly nearPool: Near[] = [];
+  /** constellation segments by opacity level, x1 y1 x2 y2 each */
+  private readonly links: number[][] = Array.from({ length: LINK_LEVELS }, () => []);
   private nextMeteor = 2;
   private sprites: AnyCanvas[] = [];
   private spriteKey = '';
@@ -400,6 +410,25 @@ export class Engine {
     gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
 
     for (const name of UNIFORMS) this.u[name] = gl.getUniformLocation(prog, name);
+
+    // the noise texture: 256×256 random RGBA, the same on every run (a small seeded generator)
+    const size = 256;
+    const data = new Uint8Array(size * size * 4);
+    let seed = 0x9e3779b9;
+    for (let i = 0; i < data.length; i++) {
+      seed ^= seed << 13;
+      seed ^= seed >>> 17;
+      seed ^= seed << 5;
+      data[i] = seed & 255;
+    }
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.uniform1i(this.u.uNoise, 0);
     return true;
   }
 
@@ -866,7 +895,13 @@ export class Engine {
           const f = (1 - d / reach) * s.z * k * cfg.field;
           s.ix += ((-dy / d) * 0.32 + (dx / d) * 0.1) * f;
           s.iy += ((dx / d) * 0.32 + (dy / d) * 0.1) * f;
-          if (cfg.constellations) near.push({ x, y, d });
+          if (cfg.constellations) {
+            const n = (this.nearPool[near.length] ??= { x: 0, y: 0, d: 0 });
+            n.x = x;
+            n.y = y;
+            n.d = d;
+            near.push(n);
+          }
         }
       }
       s.ix *= damp;
@@ -892,31 +927,40 @@ export class Engine {
       }
     }
 
-    // constellation lines around the cursor
+    // constellation lines around the cursor, gathered by opacity: one stroke per level
     if (near.length) {
       const link = cfg.linkDistance;
-      ctx.lineWidth = 0.8;
-      ctx.strokeStyle = `rgb(${css(pal.lines)})`;
+      const links = this.links;
+      for (const level of links) level.length = 0;
+      const add = (alpha: number, x1: number, y1: number, x2: number, y2: number) => {
+        const level = Math.round((alpha / LINK_MAX) * (LINK_LEVELS - 1));
+        if (level > 0) links[Math.min(LINK_LEVELS - 1, level)].push(x1, y1, x2, y2);
+      };
       for (let i = 0; i < near.length; i++) {
         const a = near[i];
         const fa = 1 - a.d / reach;
-        ctx.globalAlpha = fa * 0.35 * strength;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(m.px, m.py);
-        ctx.stroke();
+        add(fa * 0.35, a.x, a.y, m.px, m.py);
         for (let j = i + 1; j < near.length; j++) {
           const b = near[j];
           const dx = a.x - b.x;
           const dy = a.y - b.y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d > link) continue;
-          ctx.globalAlpha = (1 - d / link) * fa * 0.7 * strength;
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.stroke();
+          const d2 = dx * dx + dy * dy;
+          if (d2 > link * link) continue;
+          add((1 - Math.sqrt(d2) / link) * fa * LINK_MAX, a.x, a.y, b.x, b.y);
         }
+      }
+      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = `rgb(${css(pal.lines)})`;
+      for (let l = 1; l < LINK_LEVELS; l++) {
+        const segs = links[l];
+        if (!segs.length) continue;
+        ctx.globalAlpha = (l / (LINK_LEVELS - 1)) * LINK_MAX * strength;
+        ctx.beginPath();
+        for (let i = 0; i < segs.length; i += 4) {
+          ctx.moveTo(segs[i], segs[i + 1]);
+          ctx.lineTo(segs[i + 2], segs[i + 3]);
+        }
+        ctx.stroke();
       }
     }
 
