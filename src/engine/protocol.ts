@@ -34,6 +34,10 @@ export interface EngineConfig {
   daylight: [number, number, number, number];
   aurora: number;
   auroraPosition: number;
+  /** height, speed, waves, streaks */
+  auroraShape: [number, number, number, number];
+  /** curtains, tilt, edge */
+  auroraForm: [number, number, number];
   rays: number;
   raysSpread: number;
   glow: number;

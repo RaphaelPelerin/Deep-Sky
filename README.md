@@ -297,7 +297,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 | --- | --- |
 | `nebula` | `intensity` (1), `scale` (1, higher = smaller clouds), `shimmer` (0.22, slow drift towards warm tones) |
 | `daylight` | The light theme's finish, 0 to 2: `contrast` (1, richer, deeper colors in the folds and towards the edges), `sheen` (1, a pearly iridescent band sweeping across), `bokeh` (1, soft discs of light drifting up), `split` (0 to 1, default 0: hot and cold sides, the colors gather on one side of a slowly turning diagonal and the background holds the other). Only drawn while the sky is light |
-| `aurora` | `intensity` (1), `position` (0.7, from 0 = bottom to 1 = top) |
+| `aurora` | `intensity` (1), `position` (0.7, from 0 = bottom to 1 = top), `height` (1, how far the curtains rise), `curtains` (3, 1 to 5), `waves` (1, 0 = straight bands), `speed` (1, 0 holds them still), `streaks` (1, 0 = smooth), `tilt` (0, -1 to 1, slants them across the screen), `edge` (1, sharpness of the lower edge) |
 | `rays` | `intensity` (1), `spread` (1, angular density of the beams) |
 | `glow` | `intensity` (1, the light that follows the cursor, wandering on its own otherwise), `lens` (1, magnifying effect) |
 | `stars` | `density` (1), `size` (1), `twinkle` (1), `parallax` (1), `flares` (true), `speed` (1, upward drift) |

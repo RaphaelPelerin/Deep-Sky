@@ -83,6 +83,20 @@ export interface AuroraOptions extends Layer {
   intensity?: number;
   /** vertical position of the curtains, 0 (bottom) – 1 (top) (default 0.7) */
   position?: number;
+  /** how far the curtains rise above their lower edge, 0.2–4 (default 1) */
+  height?: number;
+  /** how fast they wave and shimmer, 0–5 (default 1, 0 holds them still) */
+  speed?: number;
+  /** how much they undulate, 0–3 (default 1, 0 = straight bands) */
+  waves?: number;
+  /** how many curtains, 1–5 (default 3) */
+  curtains?: number;
+  /** the vertical streaks of light in them, 0–1 (default 1, 0 = smooth) */
+  streaks?: number;
+  /** slants them across the screen, -1 (down to the right) – 1 (up to the right) (default 0) */
+  tilt?: number;
+  /** sharpness of their lower edge, 0.2–3 (default 1) */
+  edge?: number;
 }
 
 export interface RaysOptions extends Layer {

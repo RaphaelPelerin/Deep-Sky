@@ -177,7 +177,14 @@ const GROUPS: Group[] = [
     layer: 'aurora',
     controls: [
       range('aurora.intensity', 'Intensity', 0, 3, 0.05),
-      range('aurora.position', 'Height', 0.3, 1.05, 0.01),
+      range('aurora.position', 'Position', 0.3, 1.05, 0.01),
+      range('aurora.height', 'Height', 0.2, 3, 0.05),
+      range('aurora.curtains', 'Curtains', 1, 5, 1),
+      range('aurora.waves', 'Waves', 0, 3, 0.05),
+      range('aurora.speed', 'Speed', 0, 4, 0.05),
+      range('aurora.streaks', 'Streaks', 0, 1, 0.05),
+      range('aurora.tilt', 'Tilt', -1, 1, 0.05),
+      range('aurora.edge', 'Edge', 0.2, 3, 0.05),
     ],
   },
   {

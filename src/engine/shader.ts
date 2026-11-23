@@ -23,6 +23,8 @@ uniform vec4 uMix;        // nebula, aurora, rays, glow intensities
 uniform vec4 uFx;         // lens, grain, vignette, shimmer
 uniform vec4 uShape;      // nebula scale, aurora offset, rays spread, intro duration
 uniform vec4 uDay;        // light theme: contrast, sheen, bokeh, split
+uniform vec4 uAuroraA;    // aurora: height, speed, waves, streaks
+uniform vec4 uAuroraB;    // aurora: curtains, tilt, edge
 uniform vec3 uBg;
 uniform vec3 uNeb0;
 uniform vec3 uNeb1;
@@ -113,18 +115,22 @@ void main() {
   float aurSoft = 0.0;
   vec3 aurCol = vec3(0.0);
   if (uMix.y > 0.0) {
-    for (int i = 0; i < 3; i++) {
+    float ta = t * uAuroraA.y;
+    float rise = 7.0 / uAuroraA.x;
+    float edge = 30.0 * uAuroraB.z;
+    for (int i = 0; i < 5; i++) {
       float fi = float(i);
-      float yc = uShape.y + fi * 0.1
-        + 0.07 * sin(p.x * (1.4 + fi * 0.6) + t * (0.22 + fi * 0.07) + fi * 2.1)
-        + 0.03 * sin(p.x * 5.3 - t * 0.41 + fi * 1.3)
-        + 0.015 * sin(p.x * 11.0 + t * 0.9 + fi);
+      if (fi >= uAuroraB.x) break;
+      float yc = uShape.y + fi * 0.1 + uAuroraB.y * 0.5 * p.x
+        + uAuroraA.z * (0.07 * sin(p.x * (1.4 + fi * 0.6) + ta * (0.22 + fi * 0.07) + fi * 2.1)
+          + 0.03 * sin(p.x * 5.3 - ta * 0.41 + fi * 1.3)
+          + 0.015 * sin(p.x * 11.0 + ta * 0.9 + fi));
       float dy = p.y - yc;
-      float band = exp(-max(dy, 0.0) * 7.0) * exp(-max(-dy, 0.0) * 30.0);
-      float streak = 0.45 + 0.55 * noise(vec2(p.x * 24.0 + fi * 17.0 + t * 0.15, t * 0.5 + fi));
+      float band = exp(-max(dy, 0.0) * rise) * exp(-max(-dy, 0.0) * edge);
+      float streak = mix(1.0, 0.45 + 0.55 * noise(vec2(p.x * 24.0 + fi * 17.0 + ta * 0.15, ta * 0.5 + fi)), uAuroraA.w);
       float a = band * streak * (1.0 - fi * 0.22);
       aur += a;
-      aurSoft += exp(-max(dy, 0.0) * 4.0) * exp(-max(-dy, 0.0) * 8.0) * (1.0 - fi * 0.22);
+      aurSoft += exp(-max(dy, 0.0) * 4.0 / uAuroraA.x) * exp(-max(-dy, 0.0) * 8.0) * (1.0 - fi * 0.22);
       aurCol += a * mix(uAur0, uAur1, clamp(dy * 5.0 + fi * 0.25, 0.0, 1.0));
     }
   }

@@ -15,8 +15,26 @@ describe('normalizeOptions', () => {
   it('applies the preset, then the options', () => {
     const r = normalizeOptions({ preset: 'abyss', aurora: { position: 0.5 } });
     expect(r.preset).toBe('abyss');
-    expect(r.aurora).toEqual({ enabled: true, intensity: 0.4, position: 0.5 });
+    expect(r.aurora).toEqual({
+      enabled: true,
+      intensity: 0.4,
+      position: 0.5,
+      height: 1,
+      speed: 1,
+      waves: 1,
+      curtains: 3,
+      streaks: 1,
+      tilt: 0,
+      edge: 1,
+    });
     expect(r.grid.enabled).toBe(false);
+  });
+
+  it('shapes the aurora, within bounds', () => {
+    const cfg = toEngineConfig(normalizeOptions({ aurora: { curtains: 9, tilt: -3, height: 2, streaks: 0 } }));
+    expect(cfg.auroraForm).toEqual([5, -1, 1]);
+    expect(cfg.auroraShape).toEqual([2, 1, 1, 0]);
+    expect(toEngineConfig(normalizeOptions({ aurora: { curtains: 0.2 } })).auroraForm[0]).toBe(1);
   });
 
   it('takes the theme of a light-first preset unless told otherwise', () => {
