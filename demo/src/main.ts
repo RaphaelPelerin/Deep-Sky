@@ -16,7 +16,7 @@ import {
   type DeepSkyOptions,
   type DeepSkyStats,
   type Theme,
-} from 'deep-sky';
+} from 'deep-sky-background';
 import {
   FRAMEWORKS,
   LAYERS,
@@ -194,7 +194,7 @@ async function copy(text: string, message: string) {
   }
 }
 
-$('#copy-install').addEventListener('click', () => copy('npm i deep-sky', 'Install command copied'));
+$('#copy-install').addEventListener('click', () => copy('npm i deep-sky-background', 'Install command copied'));
 if (matchMedia('(pointer: coarse)').matches) {
   $('#hint-text').textContent = 'Drag your finger · tap anywhere on the sky';
 }

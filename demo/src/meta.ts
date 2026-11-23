@@ -1,4 +1,4 @@
-import type { Palette, PresetName } from 'deep-sky';
+import type { Palette, PresetName } from 'deep-sky-background';
 import type { LayerKey } from './code';
 
 export const PRESET_INFO: Record<PresetName, { label: string; desc: string }> = {

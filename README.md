@@ -11,7 +11,7 @@ and 3D models lit by that sky. It renders in a Web Worker, so your app never dro
 
 **[Live demo & playground](https://deep-sky-omega.vercel.app)** · [Install](#install) · [3D models](#3d-models) · [Frameworks](#frameworks) · [Options](#options) · [How it works](#how-it-works)
 
-[![npm](https://img.shields.io/npm/v/deep-sky?color=8ab4ff&label=npm)](https://www.npmjs.com/package/deep-sky)
+[![npm](https://img.shields.io/npm/v/deep-sky-background?color=8ab4ff&label=npm)](https://www.npmjs.com/package/deep-sky-background)
 [![gzip](https://img.shields.io/badge/gzip-16%20kB-8ab4ff)](#performance)
 [![dependencies](https://img.shields.io/badge/dependencies-0-8ab4ff)](package.json)
 [![types](https://img.shields.io/badge/types-TypeScript-c9a7ff)](src/types.ts)
@@ -122,20 +122,20 @@ The 3D layer needs WebGL 2. It renders in the worker with the rest, and the adap
 ## Install
 
 ```bash
-npm install deep-sky
+npm install deep-sky-background
 ```
 
 Or without a build step:
 
 ```html
-<script src="https://unpkg.com/deep-sky"></script>
+<script src="https://unpkg.com/deep-sky-background"></script>
 <deep-sky fixed preset="aurora"></deep-sky>
 ```
 
 ## Quick start
 
 ```js
-import { createDeepSky } from 'deep-sky';
+import { createDeepSky } from 'deep-sky-background';
 
 // the whole page
 const sky = createDeepSky(document.body);
@@ -156,7 +156,7 @@ The background is inserted as the first child of the container, behind its conte
 <summary><b>React</b></summary>
 
 ```tsx
-import { DeepSky } from 'deep-sky/react';
+import { DeepSky } from 'deep-sky-background/react';
 
 export function Hero() {
   return (
@@ -176,7 +176,7 @@ Every option is a prop. Props are compared by value, so inline objects don't res
 
 ```vue
 <script setup>
-import { DeepSky } from 'deep-sky/vue';
+import { DeepSky } from 'deep-sky-background/vue';
 
 const options = { preset: 'aurora' };
 </script>
@@ -195,7 +195,7 @@ const options = { preset: 'aurora' };
 
 ```svelte
 <script>
-  import { deepSky } from 'deep-sky/svelte';
+  import { deepSky } from 'deep-sky-background/svelte';
 </script>
 
 <section class="hero" use:deepSky={{ preset: 'aurora' }}>
@@ -214,7 +214,7 @@ A ten-line directive is all it takes:
 
 ```ts
 import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject, input } from '@angular/core';
-import { createDeepSky, type DeepSkyInstance, type DeepSkyOptions } from 'deep-sky';
+import { createDeepSky, type DeepSkyInstance, type DeepSkyOptions } from 'deep-sky-background';
 
 @Directive({ selector: '[deepSky]' })
 export class DeepSkyDirective {
@@ -241,7 +241,7 @@ export class DeepSkyDirective {
 
 ```html
 <script type="module">
-  import 'deep-sky/element';
+  import 'deep-sky-background/element';
 </script>
 
 <section class="hero">
@@ -368,7 +368,7 @@ createDeepSky(document.body, { animate: false });
 **Strict Content Security Policy.** The worker starts from a Blob URL, which needs `worker-src blob:`. If that's not an option, serve the bundled worker yourself:
 
 ```js
-import workerUrl from 'deep-sky/worker?url'; // Vite; or copy node_modules/deep-sky/dist/worker.iife.js
+import workerUrl from 'deep-sky-background/worker?url'; // Vite; or copy node_modules/deep-sky-background/dist/worker.iife.js
 
 createDeepSky(document.body, { worker: workerUrl });
 ```

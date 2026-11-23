@@ -6,7 +6,7 @@ import {
   type QualityPreset,
   type ResolvedOptions,
   type DeepSkyOptions,
-} from 'deep-sky';
+} from 'deep-sky-background';
 
 export const LAYERS = [
   'nebula',
@@ -145,7 +145,7 @@ export function snippet(fw: Framework, o: DeepSkyOptions): string {
   switch (fw) {
     case 'vanilla':
       return [
-        `import { createDeepSky } from 'deep-sky';`,
+        `import { createDeepSky } from 'deep-sky-background';`,
         ``,
         `// the whole page; pass any element to light up a single section`,
         `const sky = createDeepSky(document.body${empty ? '' : `, ${js(o)}`});`,
@@ -162,7 +162,7 @@ export function snippet(fw: Framework, o: DeepSkyOptions): string {
           ? `<DeepSky\n      ${[...props, 'className="hero"'].join('\n      ')}\n    >`
           : `<DeepSky ${[...props, 'className="hero"'].join(' ')}>`;
       return [
-        `import { DeepSky } from 'deep-sky/react';`,
+        `import { DeepSky } from 'deep-sky-background/react';`,
         ``,
         `export function Hero() {`,
         `  return (`,
@@ -177,7 +177,7 @@ export function snippet(fw: Framework, o: DeepSkyOptions): string {
     case 'vue':
       return [
         `<script setup>`,
-        `import { DeepSky } from 'deep-sky/vue';`,
+        `import { DeepSky } from 'deep-sky-background/vue';`,
         ``,
         `const options = ${js(o)};`,
         `</script>`,
@@ -192,7 +192,7 @@ export function snippet(fw: Framework, o: DeepSkyOptions): string {
     case 'svelte':
       return [
         `<script>`,
-        `  import { deepSky } from 'deep-sky/svelte';`,
+        `  import { deepSky } from 'deep-sky-background/svelte';`,
         ``,
         `  const options = ${js(o, 1)};`,
         `</script>`,
@@ -205,7 +205,7 @@ export function snippet(fw: Framework, o: DeepSkyOptions): string {
     case 'angular':
       return [
         `import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject, input } from '@angular/core';`,
-        `import { createDeepSky, type DeepSkyInstance, type DeepSkyOptions } from 'deep-sky';`,
+        `import { createDeepSky, type DeepSkyInstance, type DeepSkyOptions } from 'deep-sky-background';`,
         ``,
         `@Directive({ selector: '[deepSky]' })`,
         `export class DeepSkyDirective {`,
@@ -229,8 +229,8 @@ export function snippet(fw: Framework, o: DeepSkyOptions): string {
       const { attrs, rest } = splitAttributes(o);
       const load =
         fw === 'cdn'
-          ? [`<script src="https://unpkg.com/deep-sky"></script>`]
-          : [`<script type="module">`, `  import 'deep-sky/element';`, `</script>`];
+          ? [`<script src="https://unpkg.com/deep-sky-background"></script>`]
+          : [`<script type="module">`, `  import 'deep-sky-background/element';`, `</script>`];
       const extra = Object.keys(rest).length
         ? [
             ``,

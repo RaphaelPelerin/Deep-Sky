@@ -6,7 +6,7 @@ import {
   type PresetName,
   type QualityPreset,
   type ResolvedOptions,
-} from 'deep-sky';
+} from 'deep-sky-background';
 import type { LayerKey } from './code';
 import { PRESET_INFO, swatch } from './meta';
 

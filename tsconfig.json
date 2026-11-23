@@ -14,7 +14,7 @@
     "noEmit": true,
     "types": [],
     "paths": {
-      "deep-sky": ["./src/index.ts"]
+      "deep-sky-background": ["./src/index.ts"]
     }
   },
   "include": ["src", "demo/src", "test"]

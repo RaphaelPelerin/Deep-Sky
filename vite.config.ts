@@ -28,7 +28,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      { find: /^deep-sky$/, replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url)) },
+      { find: /^deep-sky-background$/, replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url)) },
     ],
   },
   define: {

@@ -240,7 +240,7 @@ export interface DeepSkyOptions {
   quality?: QualityPreset | QualityOptions;
   /**
    * true: render in an inline Web Worker (Blob URL); false: main thread;
-   * string/URL: load the worker script from there (for a strict CSP, see `deep-sky/worker`)
+   * string/URL: load the worker script from there (for a strict CSP, see `deep-sky-background/worker`)
    */
   worker?: boolean | string | URL;
   /** cover the viewport instead of the container (default: true when mounted on <body>) */
