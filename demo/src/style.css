@@ -276,7 +276,12 @@ pre {
 }
 
 .shine {
-  padding-bottom: 0.14em;
+  /* the tight letter-spacing pushes the last letter past the box, where the title's own gradient
+     would show through: room on both sides, taken back by the margins */
+  padding: 0 0.1em 0.14em;
+  margin: 0 -0.1em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
   background: linear-gradient(100deg, #a3c8ff 0%, #cfa9ff 48%, #86f2db 100%);
   -webkit-background-clip: text;
   background-clip: text;
