@@ -211,6 +211,44 @@ export const presets: Record<PresetName, DeepSkyPreset> = {
     grid: false,
   },
 
+  /** hot and cold: a red and orange left, an electric blue right, violet where they meet */
+  sunset: {
+    theme: 'light',
+    palette: {
+      dark: {
+        background: '#07081a',
+        nebula: ['#c42a1a', '#f07a12', '#2f55ff', '#8a3cff'],
+        aurora: ['#ff7a3d', '#5b7cff'],
+        rays: '#ffc590',
+        glow: '#ff9a52',
+        stars: ['#ffd8b0', '#b9c6ff', '#ffffff'],
+        spotlight: ['#ffab66', '#5b7cff'],
+        lines: '#ffc49a',
+        meteor: '#fff1df',
+        grid: 'rgba(255, 140, 80, 0.14)',
+      },
+      light: {
+        background: '#3d5cff',
+        nebula: ['#ff4a2a', '#ffa020', '#7b3cff', '#ff6a3d'],
+        aurora: ['#ffb36b', '#a78bfa'],
+        rays: '#ffffff',
+        glow: '#ffd0a8',
+        stars: ['#ffffff', '#ffffff', '#ffe2c4'],
+        spotlight: ['#ffd0a8', '#a5b4fc'],
+        lines: '#ffffff',
+        meteor: '#ffffff',
+        grid: 'rgba(255, 255, 255, 0.22)',
+      },
+    },
+    nebula: { intensity: 1, scale: 0.8, shimmer: 0 },
+    daylight: { contrast: 1.1, sheen: 0.5, bokeh: 0.25, split: 1 },
+    aurora: false,
+    rays: { intensity: 0.5 },
+    stars: { density: 0.5 },
+    meteors: { frequency: 0.6 },
+    grid: false,
+  },
+
   /** a cool morning: pale blue and periwinkle mist, a hint of mint */
   mist: {
     theme: 'light',

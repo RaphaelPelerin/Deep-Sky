@@ -38,6 +38,7 @@ const ASSETS = [
   { file: '.github/assets/ember.webp', query: 'ui=0&preset=ember', size: [960, 540], scale: 1, pointer: [0.55, 0.4] },
   { file: '.github/assets/abyss.webp', query: 'ui=0&preset=abyss', size: [960, 540], scale: 1, pointer: [0.5, 0.55] },
   { file: '.github/assets/synthwave.webp', query: 'ui=0&preset=synthwave', size: [960, 540], scale: 1, pointer: [0.45, 0.4] },
+  { file: '.github/assets/sunset.webp', query: 'ui=0&preset=sunset', size: [960, 540], scale: 1, pointer: [0.55, 0.45] },
   { file: '.github/assets/daybreak.webp', query: 'ui=0&preset=daybreak', size: [960, 540], scale: 1, pointer: [0.6, 0.5] },
   { file: '.github/assets/mist.webp', query: 'ui=0&preset=mist', size: [960, 540], scale: 1, pointer: [0.55, 0.45] },
   { file: '.github/assets/blossom.webp', query: 'ui=0&preset=blossom', size: [960, 540], scale: 1, pointer: [0.6, 0.4] },

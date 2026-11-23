@@ -425,7 +425,7 @@ export class Engine {
     gl.uniform4fv(u.uRipples, this.ripples);
     gl.uniform4f(u.uMix, cfg.nebula, cfg.aurora, cfg.rays, cfg.glow);
     gl.uniform4f(u.uFx, cfg.lens, cfg.grain, cfg.vignette, cfg.shimmer);
-    gl.uniform4f(u.uDay, cfg.daylight[0], cfg.daylight[1], cfg.daylight[2], 0);
+    gl.uniform4f(u.uDay, cfg.daylight[0], cfg.daylight[1], cfg.daylight[2], cfg.daylight[3]);
     gl.uniform4f(
       u.uShape,
       cfg.nebulaScale,

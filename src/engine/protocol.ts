@@ -30,8 +30,8 @@ export interface EngineConfig {
   nebula: number;
   nebulaScale: number;
   shimmer: number;
-  /** light theme only: contrast, sheen, bokeh (0 = off) */
-  daylight: [number, number, number];
+  /** light theme only: contrast, sheen, bokeh, split (0 = off) */
+  daylight: [number, number, number, number];
   aurora: number;
   auroraPosition: number;
   rays: number;

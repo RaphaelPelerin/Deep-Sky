@@ -8,6 +8,7 @@ export type PresetName =
   | 'synthwave'
   | 'graphite'
   | 'daybreak'
+  | 'sunset'
   | 'mist'
   | 'blossom'
   | 'lagoon'
@@ -72,6 +73,11 @@ export interface DaylightOptions extends Layer {
   sheen?: number;
   /** soft out-of-focus discs of light drifting up, 0–2 (default 1) */
   bokeh?: number;
+  /**
+   * hot and cold sides, 0–1 (default 0): the colors gather on one side of a slowly turning
+   * diagonal, the background color holds the other, and they meet through the third nebula color
+   */
+  split?: number;
 }
 
 export interface AuroraOptions extends Layer {

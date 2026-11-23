@@ -22,7 +22,7 @@ uniform vec4 uRipples[4]; // xy: center (0..1), z: start (clock), w: strength
 uniform vec4 uMix;        // nebula, aurora, rays, glow intensities
 uniform vec4 uFx;         // lens, grain, vignette, shimmer
 uniform vec4 uShape;      // nebula scale, aurora offset, rays spread, intro duration
-uniform vec4 uDay;        // light theme: contrast, sheen, bokeh
+uniform vec4 uDay;        // light theme: contrast, sheen, bokeh, split
 uniform vec3 uBg;
 uniform vec3 uNeb0;
 uniform vec3 uNeb1;
@@ -176,11 +176,23 @@ void main() {
     float f2 = 0.5 + 0.5 * sin((w.x + w.y) * 1.25 + t * 0.041 + 3.1);
     float f3 = 0.5 + 0.5 * sin(length(w - vec2(0.45 * sin(t * 0.031), 0.15)) * 3.0 - t * 0.06);
     float k = uMix.x;
+    // split: the colors keep to one side of a slowly turning, gently waving diagonal; the
+    // background holds the other side, and the third color lights the seam between them
+    float side = 1.0;
+    float seam = 0.0;
+    if (uDay.w > 0.0) {
+      float ang = 2.4 + 0.35 * sin(t * 0.021);
+      float d = dot(p, vec2(cos(ang), sin(ang))) + 0.08 * sin(p.y * 3.1 + t * 0.07) + 0.05 * sin(p.x * 4.7 - t * 0.05);
+      side = mix(1.0, smoothstep(-0.32, 0.38, d), uDay.w);
+      seam = exp(-d * d * 9.0) * uDay.w;
+    }
+    k *= side;
     light = mix(light, uNeb0, smoothstep(0.25, 1.0, f0) * 0.88 * k);
     light = mix(light, uNeb1, smoothstep(0.32, 1.0, f1) * 0.85 * k);
     light = mix(light, uNeb2, smoothstep(0.4, 1.0, f2) * 0.8 * k);
     light = mix(light, uNeb3, smoothstep(0.45, 1.0, f3) * 0.75 * k);
     light = mix(light, mix(light, nebCol, 0.45), smoothstep(0.4, 0.9, nebField) * 0.3 * k);
+    light = mix(light, uNeb2, seam * 0.55 * uMix.x);
     // the folds: a slow field of its own where the colors gather and deepen
     fold = smoothstep(0.45, 1.0, 0.5 + 0.5 * sin(w.x * 0.9 - w.y * 1.4 + t * 0.035 + 2.3)) * k;
   }

@@ -169,6 +169,7 @@ const GROUPS: Group[] = [
       range('daylight.contrast', 'Contrast', 0, 2, 0.05),
       range('daylight.sheen', 'Iridescent sheen', 0, 2, 0.05),
       range('daylight.bokeh', 'Bokeh', 0, 2, 0.05),
+      range('daylight.split', 'Hot / cold sides', 0, 1, 0.05),
     ],
   },
   {

@@ -27,7 +27,7 @@ and 3D models lit by that sky. It renders in a Web Worker, so your app never dro
 - **Adapts to the device.** It measures its own frame time, lowers its resolution and then its frame rate on slower GPUs, backs off while your page runs long tasks, and pauses when off-screen.
 - **3D models, lit by the sky.** Drop in a glTF file or a built-in shape: the cursor light, the aurora and the nebula light it, shockwaves bend it. Chrome, glass, hologram, neon wire and more, with bloom and light shafts.
 - **Feels alive.** A light follows the cursor, stars swirl around it and link into constellations, clicks send shockwaves through the nebula, shooting stars cross the sky.
-- **Fully themeable.** Ten presets (five made for light pages), every color and every layer configurable live, with a smooth crossfade between dark and light themes.
+- **Fully themeable.** Eleven presets (six made for light pages), every color and every layer configurable live, with a smooth crossfade between dark and light themes.
 - **Works everywhere.** Vanilla JS, React, Vue, Svelte, Angular, a `<deep-sky>` tag or a `<script>` from a CDN. TypeScript types included.
 - **Polite by default.** Respects `prefers-reduced-motion`, is hidden from assistive tech, never blocks clicks, and falls back gracefully when WebGL or workers are missing.
 - **Small.** 16 kB gzipped, zero dependencies. The 3D layer (15 kB) is only downloaded by pages that use it.
@@ -42,9 +42,9 @@ Night skies:
 
 Light first (a vivid gradient mesh gliding over bright paper, sunbeams and white sparkles):
 
-| ![Daybreak](.github/assets/daybreak.webp) | ![Mist](.github/assets/mist.webp) | ![Blossom](.github/assets/blossom.webp) | ![Lagoon](.github/assets/lagoon.webp) |
-| :--: | :--: | :--: | :--: |
-| `daybreak` | `mist` | `blossom` | `lagoon` |
+| ![Sunset](.github/assets/sunset.webp) | ![Daybreak](.github/assets/daybreak.webp) | ![Mist](.github/assets/mist.webp) | ![Blossom](.github/assets/blossom.webp) | ![Lagoon](.github/assets/lagoon.webp) |
+| :--: | :--: | :--: | :--: | :--: |
+| `sunset` | `daybreak` | `mist` | `blossom` | `lagoon` |
 
 Plus two quiet ones for product UIs: `graphite` (dark) and `porcelain` (light). Every preset has a dark and a light palette, and `theme` picks one. Build your own in the [playground](https://deep-sky-omega.vercel.app) and copy the generated code.
 
@@ -296,7 +296,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 | Layer | Settings (defaults) |
 | --- | --- |
 | `nebula` | `intensity` (1), `scale` (1, higher = smaller clouds), `shimmer` (0.22, slow drift towards warm tones) |
-| `daylight` | The light theme's finish, 0 to 2: `contrast` (1, richer, deeper colors in the folds and towards the edges), `sheen` (1, a pearly iridescent band sweeping across), `bokeh` (1, soft discs of light drifting up). Only drawn while the sky is light |
+| `daylight` | The light theme's finish, 0 to 2: `contrast` (1, richer, deeper colors in the folds and towards the edges), `sheen` (1, a pearly iridescent band sweeping across), `bokeh` (1, soft discs of light drifting up), `split` (0 to 1, default 0: hot and cold sides, the colors gather on one side of a slowly turning diagonal and the background holds the other). Only drawn while the sky is light |
 | `aurora` | `intensity` (1), `position` (0.7, from 0 = bottom to 1 = top) |
 | `rays` | `intensity` (1), `spread` (1, angular density of the beams) |
 | `glow` | `intensity` (1, the light that follows the cursor, wandering on its own otherwise), `lens` (1, magnifying effect) |
