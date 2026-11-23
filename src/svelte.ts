@@ -5,7 +5,7 @@ import type { DeepSkyOptions } from './types';
  * Svelte action (Svelte 3, 4 and 5):
  *
  * ```svelte
- * <section class="hero" use:deepSky={{ preset: 'aurora' }}>…</section>
+ * <section class="hero" use:deepSky={{ preset: 'ember' }}>…</section>
  * ```
  */
 export function deepSky(node: HTMLElement, options: DeepSkyOptions = {}) {

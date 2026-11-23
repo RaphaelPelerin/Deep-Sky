@@ -3,12 +3,15 @@ export type Color = string;
 
 export type PresetName =
   | 'cosmos'
-  | 'aurora'
   | 'ember'
   | 'abyss'
   | 'synthwave'
   | 'graphite'
-  | 'daybreak';
+  | 'daybreak'
+  | 'mist'
+  | 'blossom'
+  | 'lagoon'
+  | 'porcelain';
 
 export type Theme = 'dark' | 'light' | 'auto';
 

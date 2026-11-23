@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 (2026-11-23)
+
+- **A new light theme.** Watercolor washes of the palette over bright paper, instead of faint tints: beams, the roaming light, shockwaves and sweeps add light, the aurora is a soft veil, and the grain is halved. Every preset has new pastel light colors.
+- **Light-first presets**: `daybreak` (remade: peach, rose and lilac), `mist` (a cool morning haze), `blossom` (cherry blossom pinks), `lagoon` (turquoise water and sunlight) and `porcelain` (warm whites and grays for product UIs). Each has a dark palette too.
+- The `aurora` preset is gone (the aurora layer stays): asking for it gives `cosmos`.
+- The package is published as `deep-sky-background` on npm.
+
 ## 0.2.0 (2026-10-28)
 
 - **3D models.** `models` hangs glTF / GLB files or built-in shapes (`orb`, `knot`, `torus`, `crystal`, `gem`, `planet`, `cube`) in the sky, lit by it: the roaming light, aurora rim lights, the nebula as reflections and refraction, shockwaves that bend them and set them spinning.

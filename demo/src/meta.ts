@@ -3,12 +3,15 @@ import type { LayerKey } from './code';
 
 export const PRESET_INFO: Record<PresetName, { label: string; desc: string }> = {
   cosmos: { label: 'Cosmos', desc: 'The original. Violet nebula, teal aurora, cold starlight.' },
-  aurora: { label: 'Aurora', desc: 'Northern lights over an arctic night.' },
   ember: { label: 'Ember', desc: 'Molten nebula and warm beams at dusk.' },
   abyss: { label: 'Abyss', desc: 'God rays through deep ocean water.' },
   synthwave: { label: 'Synthwave', desc: 'Neon horizon on an endless grid.' },
   graphite: { label: 'Graphite', desc: 'Monochrome and quiet, made for product UIs.' },
-  daybreak: { label: 'Daybreak', desc: 'A bright pastel sky. Light mode first.' },
+  daybreak: { label: 'Daybreak', desc: 'Sunrise: peach, rose and lilac. Light first.' },
+  mist: { label: 'Mist', desc: 'A cool morning haze of blues. Light first.' },
+  blossom: { label: 'Blossom', desc: 'Cherry blossom pinks and lavender. Light first.' },
+  lagoon: { label: 'Lagoon', desc: 'Turquoise water and dancing sunlight. Light first.' },
+  porcelain: { label: 'Porcelain', desc: 'Warm whites and soft grays for product UIs. Light first.' },
 };
 
 export const LAYER_INFO: { key: Exclude<LayerKey, 'cursor'>; label: string; desc: string }[] = [

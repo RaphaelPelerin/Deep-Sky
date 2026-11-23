@@ -13,23 +13,33 @@ describe('normalizeOptions', () => {
   });
 
   it('applies the preset, then the options', () => {
-    const r = normalizeOptions({ preset: 'aurora', aurora: { position: 0.5 } });
-    expect(r.preset).toBe('aurora');
-    expect(r.aurora).toEqual({ enabled: true, intensity: 2, position: 0.5 });
+    const r = normalizeOptions({ preset: 'abyss', aurora: { position: 0.5 } });
+    expect(r.preset).toBe('abyss');
+    expect(r.aurora).toEqual({ enabled: true, intensity: 0.4, position: 0.5 });
     expect(r.grid.enabled).toBe(false);
   });
 
   it('takes the theme of a light-first preset unless told otherwise', () => {
     expect(normalizeOptions({ preset: 'daybreak' }).theme).toBe('light');
     expect(normalizeOptions({ preset: 'daybreak', theme: 'dark' }).theme).toBe('dark');
+    for (const name of ['mist', 'blossom', 'lagoon', 'porcelain'] as const) {
+      expect(normalizeOptions({ preset: name }).theme).toBe('light');
+    }
+    expect(normalizeOptions({ preset: 'cosmos' }).theme).toBe('dark');
+  });
+
+  it('falls back to cosmos for a preset that no longer exists', () => {
+    // 'aurora' was a preset until 0.3.0
+    const r = normalizeOptions({ preset: 'aurora' as never });
+    expect(r.preset).toBe('cosmos');
   });
 
   it('switches layers with booleans and keeps their settings', () => {
     const off = normalizeOptions({ preset: 'synthwave', grid: false });
     expect(off.grid.enabled).toBe(false);
     expect(off.grid.size).toBe(56);
-    expect(normalizeOptions({ preset: 'aurora', grid: true }).grid.enabled).toBe(true);
-    expect(normalizeOptions({ preset: 'aurora', grid: { size: 32 } }).grid).toMatchObject({
+    expect(normalizeOptions({ preset: 'abyss', grid: true }).grid.enabled).toBe(true);
+    expect(normalizeOptions({ preset: 'abyss', grid: { size: 32 } }).grid).toMatchObject({
       enabled: true,
       size: 32,
     });
@@ -87,7 +97,7 @@ describe('normalizeOptions', () => {
 describe('mergeOptions', () => {
   it('merges layers and palettes, replaces the rest', () => {
     const merged = mergeOptions(
-      { preset: 'aurora', nebula: { intensity: 2 }, palette: { dark: { glow: '#fff' } } },
+      { preset: 'abyss', nebula: { intensity: 2 }, palette: { dark: { glow: '#fff' } } },
       { preset: 'ember', nebula: { scale: 3 }, palette: { light: { glow: '#000' } }, speed: 2 },
     );
     expect(merged).toEqual({

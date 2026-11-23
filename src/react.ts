@@ -43,7 +43,7 @@ const snapshot = (options: DeepSkyOptions) =>
  * A container with a deep-sky background behind its children.
  *
  * ```tsx
- * <DeepSky preset="aurora" className="hero">
+ * <DeepSky preset="ember" className="hero">
  *   <h1>Hello, universe</h1>
  * </DeepSky>
  * ```

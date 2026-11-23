@@ -6,7 +6,7 @@ import type { DeepSkyInstance, DeepSkyOptions } from './types';
  * A container with a deep-sky background behind its slot.
  *
  * ```vue
- * <DeepSky :options="{ preset: 'aurora' }" class="hero">
+ * <DeepSky :options="{ preset: 'ember' }" class="hero">
  *   <h1>Hello, universe</h1>
  * </DeepSky>
  * ```

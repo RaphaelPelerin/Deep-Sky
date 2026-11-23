@@ -33,7 +33,7 @@ const LAYER = {
  * Mounts a deep-sky background inside `container`, behind its content.
  *
  * ```ts
- * const sky = createDeepSky(document.body, { preset: 'aurora' });
+ * const sky = createDeepSky(document.body, { preset: 'ember' });
  * sky.set({ theme: 'light' });
  * ```
  */

@@ -88,6 +88,8 @@ void main() {
 
   // nebula
   float neb = 0.0;
+  // the whole field, not only the dense clouds: the light theme paints with it
+  float nebField = 0.0;
   vec3 nebCol = uNeb0;
   if (uMix.x > 0.0) {
     vec2 np = p * uShape.x;
@@ -95,7 +97,8 @@ void main() {
                   fbm(np * 1.3 + vec2(5.2, -t * 0.03)));
     vec2 r = vec2(fbm(np * 1.7 + 3.0 * q + vec2(1.7, 9.2) + t * 0.045),
                   fbm(np * 1.7 + 3.0 * q + vec2(8.3, 2.8) - t * 0.04));
-    neb = smoothstep(0.26, 0.92, fbm(np * 1.5 + 3.2 * r));
+    nebField = fbm(np * 1.5 + 3.2 * r);
+    neb = smoothstep(0.26, 0.92, nebField);
     nebCol = mix(uNeb0, uNeb1, clamp(q.x * 1.7 - 0.2, 0.0, 1.0));
     nebCol = mix(nebCol, uNeb2, clamp(r.y * r.y * 2.0, 0.0, 1.0));
     nebCol = mix(nebCol, uNeb3, clamp(r.x * r.x * r.x * 2.2, 0.0, 1.0) * 0.55);
@@ -105,6 +108,8 @@ void main() {
 
   // aurora: waving curtains with a sharp lower edge and vertical streaks
   float aur = 0.0;
+  // the same curtains without streaks nor a sharp edge: a soft veil for the light theme
+  float aurSoft = 0.0;
   vec3 aurCol = vec3(0.0);
   if (uMix.y > 0.0) {
     for (int i = 0; i < 3; i++) {
@@ -118,6 +123,7 @@ void main() {
       float streak = 0.45 + 0.55 * noise(vec2(p.x * 24.0 + fi * 17.0 + t * 0.15, t * 0.5 + fi));
       float a = band * streak * (1.0 - fi * 0.22);
       aur += a;
+      aurSoft += exp(-max(dy, 0.0) * 4.0) * exp(-max(-dy, 0.0) * 8.0) * (1.0 - fi * 0.22);
       aurCol += a * mix(uAur0, uAur1, clamp(dy * 5.0 + fi * 0.25, 0.0, 1.0));
     }
   }
@@ -154,16 +160,18 @@ void main() {
   dark = mix(uBg, dark, intro);
   dark *= 1.0 - uFx.z * dot(uv - 0.5, uv - 0.5);
 
-  // light theme: soft pastel tints over a bright background
+  // light theme: watercolor washes of the (pastel) palette over bright paper; beams, the roaming
+  // light, shockwaves and sweeps add light instead of tinting it
   vec3 light = uBg;
-  light = mix(light, mix(nebCol, uBg, 0.45), neb * 0.3 * uMix.x);
-  light = mix(light, mix(aurCol / max(aur, 1e-3), uBg, 0.5), clamp(aur, 0.0, 1.0) * 0.28 * uMix.y);
-  light = mix(light, mix(uRays, uBg, 0.5),
-    clamp(rays * 0.25 * uMix.z + ml * 0.22 * uMix.w + ring * 0.2 + sweep * 0.15, 0.0, 1.0));
+  light = mix(light, nebCol, clamp(smoothstep(0.12, 0.72, nebField) * 0.9 * uMix.x, 0.0, 0.92));
+  light = mix(light, aurCol / max(aur, 1e-3), clamp(aurSoft * 0.24 * uMix.y, 0.0, 0.6));
+  light = mix(light, mix(uRays, vec3(1.0), 0.6), clamp(rays * 0.3 * uMix.z, 0.0, 0.7));
+  light = mix(light, uGlow, ml * 0.15 * uMix.w);
+  light = mix(light, vec3(1.0), clamp(ring * 0.3 + sweep * 0.25, 0.0, 1.0));
   light = mix(uBg, light, intro);
 
   vec3 col = mix(light, dark, uPointer.z);
-  col += (hash(gl_FragCoord.xy + fract(clock * 7.0) * 113.0) - 0.5) * uFx.y;
+  col += (hash(gl_FragCoord.xy + fract(clock * 7.0) * 113.0) - 0.5) * uFx.y * (0.5 + 0.5 * uPointer.z);
   gl_FragColor = vec4(col, 1.0);
 }
 `;

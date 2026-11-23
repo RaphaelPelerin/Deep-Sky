@@ -13,7 +13,7 @@ import type {
  * `<deep-sky>`: the background as a custom element.
  *
  * ```html
- * <deep-sky preset="aurora" fixed></deep-sky>
+ * <deep-sky preset="ember" fixed></deep-sky>
  * ```
  *
  * It fills its parent (or the viewport with `fixed`) behind the content. Simple options are

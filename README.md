@@ -27,20 +27,26 @@ and 3D models lit by that sky. It renders in a Web Worker, so your app never dro
 - **Adapts to the device.** It measures its own frame time, lowers its resolution and then its frame rate on slower GPUs, backs off while your page runs long tasks, and pauses when off-screen.
 - **3D models, lit by the sky.** Drop in a glTF file or a built-in shape: the cursor light, the aurora and the nebula light it, shockwaves bend it. Chrome, glass, hologram, neon wire and more, with bloom and light shafts.
 - **Feels alive.** A light follows the cursor, stars swirl around it and link into constellations, clicks send shockwaves through the nebula, shooting stars cross the sky.
-- **Fully themeable.** Seven presets, every color and every layer configurable live, with a smooth crossfade between dark and light themes.
+- **Fully themeable.** Ten presets (five made for light pages), every color and every layer configurable live, with a smooth crossfade between dark and light themes.
 - **Works everywhere.** Vanilla JS, React, Vue, Svelte, Angular, a `<deep-sky>` tag or a `<script>` from a CDN. TypeScript types included.
 - **Polite by default.** Respects `prefers-reduced-motion`, is hidden from assistive tech, never blocks clicks, and falls back gracefully when WebGL or workers are missing.
 - **Small.** 16 kB gzipped, zero dependencies. The 3D layer (15 kB) is only downloaded by pages that use it.
 
 ## Presets
 
-| ![Cosmos](.github/assets/cosmos.webp) | ![Aurora](.github/assets/aurora.webp) | ![Ember](.github/assets/ember.webp) |
-| :--: | :--: | :--: |
-| `cosmos` (default) | `aurora` | `ember` |
-| ![Abyss](.github/assets/abyss.webp) | ![Synthwave](.github/assets/synthwave.webp) | ![Daybreak](.github/assets/daybreak.webp) |
-| `abyss` | `synthwave` | `daybreak` (light) |
+Night skies:
 
-Plus `graphite`, a quiet monochrome sky for product UIs. Every preset has a dark and a light palette. Build your own in the [playground](https://deep-sky-omega.vercel.app) and copy the generated code.
+| ![Cosmos](.github/assets/cosmos.webp) | ![Ember](.github/assets/ember.webp) | ![Abyss](.github/assets/abyss.webp) | ![Synthwave](.github/assets/synthwave.webp) |
+| :--: | :--: | :--: | :--: |
+| `cosmos` (default) | `ember` | `abyss` | `synthwave` |
+
+Light first (watercolor washes over bright paper, beams that add light):
+
+| ![Daybreak](.github/assets/daybreak.webp) | ![Mist](.github/assets/mist.webp) | ![Blossom](.github/assets/blossom.webp) | ![Lagoon](.github/assets/lagoon.webp) |
+| :--: | :--: | :--: | :--: |
+| `daybreak` | `mist` | `blossom` | `lagoon` |
+
+Plus two quiet ones for product UIs: `graphite` (dark) and `porcelain` (light). Every preset has a dark and a light palette, and `theme` picks one. Build your own in the [playground](https://deep-sky-omega.vercel.app) and copy the generated code.
 
 ## 3D models
 
@@ -129,7 +135,7 @@ Or without a build step:
 
 ```html
 <script src="https://unpkg.com/deep-sky-background"></script>
-<deep-sky fixed preset="aurora"></deep-sky>
+<deep-sky fixed preset="ember"></deep-sky>
 ```
 
 ## Quick start
@@ -142,7 +148,7 @@ const sky = createDeepSky(document.body);
 
 // or a single section, with options
 createDeepSky(document.querySelector('.hero'), {
-  preset: 'aurora',
+  preset: 'ember',
   meteors: { frequency: 2 },
   palette: { dark: { glow: '#7cf3e2' } },
 });
@@ -160,7 +166,7 @@ import { DeepSky } from 'deep-sky-background/react';
 
 export function Hero() {
   return (
-    <DeepSky preset="aurora" className="hero" onReady={(sky) => sky.pulse()}>
+    <DeepSky preset="ember" className="hero" onReady={(sky) => sky.pulse()}>
       <h1>Hello, universe</h1>
     </DeepSky>
   );
@@ -178,7 +184,7 @@ Every option is a prop. Props are compared by value, so inline objects don't res
 <script setup>
 import { DeepSky } from 'deep-sky-background/vue';
 
-const options = { preset: 'aurora' };
+const options = { preset: 'ember' };
 </script>
 
 <template>
@@ -198,7 +204,7 @@ const options = { preset: 'aurora' };
   import { deepSky } from 'deep-sky-background/svelte';
 </script>
 
-<section class="hero" use:deepSky={{ preset: 'aurora' }}>
+<section class="hero" use:deepSky={{ preset: 'ember' }}>
   <h1>Hello, universe</h1>
 </section>
 ```
@@ -231,7 +237,7 @@ export class DeepSkyDirective {
 ```
 
 ```html
-<section class="hero" [deepSky]="{ preset: 'aurora' }">…</section>
+<section class="hero" [deepSky]="{ preset: 'ember' }">…</section>
 ```
 
 </details>
@@ -245,7 +251,7 @@ export class DeepSkyDirective {
 </script>
 
 <section class="hero">
-  <deep-sky preset="aurora" theme="light"></deep-sky>
+  <deep-sky preset="blossom"></deep-sky>
   <h1>Hello, universe</h1>
 </section>
 ```
@@ -264,7 +270,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 
 | Option | Type | Default | |
 | --- | --- | --- | --- |
-| `preset` | `'cosmos' \| 'aurora' \| 'ember' \| 'abyss' \| 'synthwave' \| 'graphite' \| 'daybreak'` or a preset object | `'cosmos'` | Starting point for everything else |
+| `preset` | `'cosmos' \| 'ember' \| 'abyss' \| 'synthwave' \| 'graphite' \| 'daybreak' \| 'mist' \| 'blossom' \| 'lagoon' \| 'porcelain'` or a preset object | `'cosmos'` | Starting point for everything else |
 | `theme` | `'dark' \| 'light' \| 'auto'` | preset's, else `'dark'` | `auto` follows `prefers-color-scheme`; changes crossfade |
 | `palette` | `{ dark?: Partial<Palette>, light?: Partial<Palette> }` | preset's | See [palette](#palette) |
 | `speed` | `number` | `1` | Time multiplier, `0` freezes the motion |
