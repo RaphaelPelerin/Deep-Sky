@@ -296,6 +296,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 | Layer | Settings (defaults) |
 | --- | --- |
 | `nebula` | `intensity` (1), `scale` (1, higher = smaller clouds), `shimmer` (0.22, slow drift towards warm tones) |
+| `daylight` | The light theme's finish, 0 to 2: `contrast` (1, richer, deeper colors in the folds and towards the edges), `sheen` (1, a pearly iridescent band sweeping across), `bokeh` (1, soft discs of light drifting up). Only drawn while the sky is light |
 | `aurora` | `intensity` (1), `position` (0.7, from 0 = bottom to 1 = top) |
 | `rays` | `intensity` (1), `spread` (1, angular density of the beams) |
 | `glow` | `intensity` (1, the light that follows the cursor, wandering on its own otherwise), `lens` (1, magnifying effect) |

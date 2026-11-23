@@ -3,6 +3,7 @@
 ## 0.3.0 (2026-11-23)
 
 - **A new light theme.** A slow gradient mesh of the palette's colors, vivid and smooth, over bright paper, with the nebula as a faint marbling, instead of faint gray tints. Beams, the roaming light, shockwaves and sweeps add light, stars are white sparkles, the aurora is a soft veil, and the grain is halved. Every preset has new light colors.
+- **`daylight`**, the light theme's finish: `contrast` (colors deepen in the folds and towards the edges, a colored vignette, never gray), `sheen` (a pearly, iridescent band sweeping slowly across) and `bokeh` (soft discs of light with a bright rim, drifting up). Also `<deep-sky daylight="1.5">` and a Daylight section in the playground. Skipped entirely while the sky is dark.
 - **Light-first presets**: `daybreak` (remade: peach, rose and lilac), `mist` (a cool morning haze), `blossom` (cherry blossom pinks), `lagoon` (turquoise water and sunlight) and `porcelain` (warm whites and grays for product UIs). Each has a dark palette too.
 - The `aurora` preset is gone (the aurora layer stays): asking for it gives `cosmos`.
 - The package is published as `deep-sky-background` on npm.

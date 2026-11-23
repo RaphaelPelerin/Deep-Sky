@@ -24,10 +24,11 @@ const HOST_CSS =
   ':host{display:block;position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}' +
   ':host([fixed]){position:fixed}';
 
-const LAYERS = ['nebula', 'aurora', 'rays', 'glow', 'stars', 'meteors', 'grid', 'cursor'] as const;
+const LAYERS = ['nebula', 'daylight', 'aurora', 'rays', 'glow', 'stars', 'meteors', 'grid', 'cursor'] as const;
 /** the main setting of a layer when its attribute is a number */
 const MAIN_SETTING: Partial<Record<(typeof LAYERS)[number], string>> = {
   nebula: 'intensity',
+  daylight: 'contrast',
   aurora: 'intensity',
   rays: 'intensity',
   glow: 'intensity',

@@ -34,6 +34,16 @@ describe('normalizeOptions', () => {
     expect(r.preset).toBe('cosmos');
   });
 
+  it('finishes the light theme with daylight, per preset, and turns it off', () => {
+    expect(normalizeOptions().daylight).toEqual({ enabled: true, contrast: 1, sheen: 1, bokeh: 1 });
+    expect(normalizeOptions({ preset: 'porcelain' }).daylight).toMatchObject({ contrast: 0.5, sheen: 0.3 });
+    expect(normalizeOptions({ daylight: { bokeh: 2 } }).daylight).toMatchObject({ enabled: true, bokeh: 2, sheen: 1 });
+    const off = normalizeOptions({ daylight: false });
+    expect(off.daylight.enabled).toBe(false);
+    expect(toEngineConfig(off).daylight).toEqual([0, 0, 0]);
+    expect(toEngineConfig(normalizeOptions({ daylight: { sheen: 9 } })).daylight[1]).toBe(2);
+  });
+
   it('switches layers with booleans and keeps their settings', () => {
     const off = normalizeOptions({ preset: 'synthwave', grid: false });
     expect(off.grid.enabled).toBe(false);

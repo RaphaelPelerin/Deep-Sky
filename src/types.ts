@@ -64,6 +64,16 @@ export interface NebulaOptions extends Layer {
   shimmer?: number;
 }
 
+/** the light theme's finish: only drawn while the sky is light */
+export interface DaylightOptions extends Layer {
+  /** depth: richer, deeper shades in the folds of the colors and towards the edges, 0–2 (default 1) */
+  contrast?: number;
+  /** a pearly, iridescent sheen sweeping slowly across, 0–2 (default 1) */
+  sheen?: number;
+  /** soft out-of-focus discs of light drifting up, 0–2 (default 1) */
+  bokeh?: number;
+}
+
 export interface AuroraOptions extends Layer {
   intensity?: number;
   /** vertical position of the curtains, 0 (bottom) – 1 (top) (default 0.7) */
@@ -219,6 +229,8 @@ export interface DeepSkyOptions {
   intro?: boolean;
 
   nebula?: boolean | NebulaOptions;
+  /** the light theme's contrast, iridescent sheen and bokeh */
+  daylight?: boolean | DaylightOptions;
   aurora?: boolean | AuroraOptions;
   rays?: boolean | RaysOptions;
   glow?: boolean | GlowOptions;
@@ -285,6 +297,7 @@ export interface ResolvedOptions {
   animate: boolean | 'auto';
   intro: boolean;
   nebula: Required<NebulaOptions>;
+  daylight: Required<DaylightOptions>;
   aurora: Required<AuroraOptions>;
   rays: Required<RaysOptions>;
   glow: Required<GlowOptions>;

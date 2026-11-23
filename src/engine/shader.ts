@@ -22,6 +22,7 @@ uniform vec4 uRipples[4]; // xy: center (0..1), z: start (clock), w: strength
 uniform vec4 uMix;        // nebula, aurora, rays, glow intensities
 uniform vec4 uFx;         // lens, grain, vignette, shimmer
 uniform vec4 uShape;      // nebula scale, aurora offset, rays spread, intro duration
+uniform vec4 uDay;        // light theme: contrast, sheen, bokeh
 uniform vec3 uBg;
 uniform vec3 uNeb0;
 uniform vec3 uNeb1;
@@ -162,8 +163,11 @@ void main() {
 
   // light theme: a slow gradient mesh, large smooth fields of the palette's four colors gliding
   // over bright paper (bent by shockwaves and the lens like the rest), the nebula as a faint
-  // marbling on top; beams, the roaming light, shockwaves and sweeps add light
+  // marbling on top; then its finish (uDay): depth, an iridescent sheen and bokeh
   vec3 light = uBg;
+  float fold = 0.0;
+  // all of it is skipped while the sky is fully dark
+  if (uPointer.z < 0.999) {
   if (uMix.x > 0.0) {
     vec2 w = p * (0.55 + 0.45 * uShape.x);
     w += 0.32 * vec2(sin(w.y * 1.6 + t * 0.05), sin(w.x * 1.3 - t * 0.04 + 1.1));
@@ -177,13 +181,58 @@ void main() {
     light = mix(light, uNeb2, smoothstep(0.4, 1.0, f2) * 0.8 * k);
     light = mix(light, uNeb3, smoothstep(0.45, 1.0, f3) * 0.75 * k);
     light = mix(light, mix(light, nebCol, 0.45), smoothstep(0.4, 0.9, nebField) * 0.3 * k);
+    // the folds: a slow field of its own where the colors gather and deepen
+    fold = smoothstep(0.45, 1.0, 0.5 + 0.5 * sin(w.x * 0.9 - w.y * 1.4 + t * 0.035 + 2.3)) * k;
   }
   light = mix(light, aurCol / max(aur, 1e-3), clamp(aurSoft * 0.24 * uMix.y, 0.0, 0.6));
+
+  // contrast: a color multiplied by itself is the same hue, richer and deeper. In the folds and
+  // towards the edges (a colored vignette, never gray), plus a touch more saturation everywhere
+  if (uDay.x > 0.0) {
+    vec3 deep = light * light;
+    float edge = clamp(dot(uv - 0.5, uv - 0.5) * 2.2, 0.0, 1.0);
+    light = mix(light, deep, clamp(fold * 0.5 + edge * 0.4, 0.0, 0.8) * uDay.x);
+    float luma = dot(light, vec3(0.299, 0.587, 0.114));
+    light = max(mix(vec3(luma), light, 1.0 + 0.22 * uDay.x), 0.0);
+  }
+
   light = mix(light, vec3(1.0), clamp(rays * 0.32 * uMix.z, 0.0, 0.6));
   light = mix(light, uGlow, ml * 0.14 * uMix.w);
+
+  // sheen: a pearly band sweeping slowly across, its colors shifting like a soap bubble
+  if (uDay.y > 0.0) {
+    float sx = uv.x * 0.85 + uv.y * 0.55 + 0.08 * sin(uv.y * 4.0 + t * 0.12);
+    float band = fract(sx * 0.45 - t * 0.012) - 0.5;
+    float m = exp(-band * band * 60.0) + 0.35 * exp(-band * band * 12.0);
+    vec3 iri = 0.5 + 0.5 * cos(6.2832 * (sx * 1.7 - t * 0.025 + vec3(0.0, 0.33, 0.67)));
+    light = mix(light, mix(vec3(1.0), iri, 0.45), clamp(m * 0.38 * uDay.y, 0.0, 0.75));
+  }
+
+  // bokeh: two depths of soft discs of light, a brighter rim, drifting up and breathing
+  if (uDay.z > 0.0) {
+    float bok = 0.0;
+    for (int i = 0; i < 2; i++) {
+      float fi = float(i);
+      vec2 bp = p * (3.2 + fi * 2.6) + vec2(t * 0.03 * (1.0 + fi), -t * 0.06 * (1.0 + fi * 0.6)) + fi * 7.3;
+      vec2 cell = floor(bp);
+      float h = hash(cell + fi * 13.1);
+      if (h > 0.68) {
+        vec2 o = (vec2(hash(cell + 1.7), hash(cell + 4.3)) - 0.5) * 0.3;
+        float r = 0.17 + 0.14 * hash(cell + 9.1);
+        float d = length(fract(bp) - 0.5 - o);
+        float disc = smoothstep(r, r - 0.05, d);
+        float rim = disc * smoothstep(r - 0.09, r - 0.02, d);
+        float breathe = 0.55 + 0.45 * sin(t * 0.4 + h * 40.0);
+        bok += (disc * 0.5 + rim * 0.5) * breathe * (1.0 - fi * 0.4);
+      }
+    }
+    light = mix(light, vec3(1.0), clamp(bok, 0.0, 1.0) * 0.32 * uDay.z);
+  }
+
   light = mix(light, vec3(1.0), clamp(ring * 0.3 + sweep * 0.25, 0.0, 1.0));
   // the paper shows through towards the top: a bright sky, calm behind headlines
   light = mix(light, uBg, smoothstep(0.55, 1.1, uv.y) * 0.18);
+  }
   light = mix(uBg, light, intro);
 
   vec3 col = mix(light, dark, uPointer.z);

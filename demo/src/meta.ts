@@ -16,6 +16,7 @@ export const PRESET_INFO: Record<PresetName, { label: string; desc: string }> = 
 
 export const LAYER_INFO: { key: Exclude<LayerKey, 'cursor'>; label: string; desc: string }[] = [
   { key: 'nebula', label: 'Nebula', desc: 'Domain-warped fractal clouds' },
+  { key: 'daylight', label: 'Daylight', desc: 'Contrast, sheen and bokeh in light mode' },
   { key: 'aurora', label: 'Aurora', desc: 'Waving curtains of light' },
   { key: 'rays', label: 'Light beams', desc: 'God rays from above' },
   { key: 'glow', label: 'Glow', desc: 'A light that follows you' },
@@ -39,6 +40,8 @@ export function layerColor(p: Palette, key: LayerKey): string {
   switch (key) {
     case 'nebula':
       return p.nebula[1];
+    case 'daylight':
+      return p.nebula[2];
     case 'aurora':
       return p.aurora[0];
     case 'rays':

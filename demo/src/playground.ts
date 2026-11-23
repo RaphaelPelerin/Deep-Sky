@@ -163,6 +163,15 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: 'Daylight (light theme)',
+    layer: 'daylight',
+    controls: [
+      range('daylight.contrast', 'Contrast', 0, 2, 0.05),
+      range('daylight.sheen', 'Iridescent sheen', 0, 2, 0.05),
+      range('daylight.bokeh', 'Bokeh', 0, 2, 0.05),
+    ],
+  },
+  {
     title: 'Aurora',
     layer: 'aurora',
     controls: [
