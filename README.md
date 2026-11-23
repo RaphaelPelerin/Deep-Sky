@@ -40,7 +40,7 @@ Night skies:
 | :--: | :--: | :--: | :--: |
 | `cosmos` (default) | `ember` | `abyss` | `synthwave` |
 
-Light first (watercolor washes over bright paper, beams that add light):
+Light first (a vivid gradient mesh gliding over bright paper, sunbeams and white sparkles):
 
 | ![Daybreak](.github/assets/daybreak.webp) | ![Mist](.github/assets/mist.webp) | ![Blossom](.github/assets/blossom.webp) | ![Lagoon](.github/assets/lagoon.webp) |
 | :--: | :--: | :--: | :--: |

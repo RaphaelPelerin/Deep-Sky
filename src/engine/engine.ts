@@ -811,7 +811,7 @@ export class Engine {
     ctx.globalCompositeOperation = 'source-over';
     if (cfg.grid > 0) this.renderGrid(ctx, pal);
     ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
-    const strength = dark ? 1 : 0.55;
+    const strength = dark ? 1 : 0.9;
     const m = this.mouse;
 
     // spotlight under the cursor: lights the background and shows through glassy UIs

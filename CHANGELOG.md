@@ -2,7 +2,7 @@
 
 ## 0.3.0 (2026-11-23)
 
-- **A new light theme.** Watercolor washes of the palette over bright paper, instead of faint tints: beams, the roaming light, shockwaves and sweeps add light, the aurora is a soft veil, and the grain is halved. Every preset has new pastel light colors.
+- **A new light theme.** A slow gradient mesh of the palette's colors, vivid and smooth, over bright paper, with the nebula as a faint marbling, instead of faint gray tints. Beams, the roaming light, shockwaves and sweeps add light, stars are white sparkles, the aurora is a soft veil, and the grain is halved. Every preset has new light colors.
 - **Light-first presets**: `daybreak` (remade: peach, rose and lilac), `mist` (a cool morning haze), `blossom` (cherry blossom pinks), `lagoon` (turquoise water and sunlight) and `porcelain` (warm whites and grays for product UIs). Each has a dark palette too.
 - The `aurora` preset is gone (the aurora layer stays): asking for it gives `cosmos`.
 - The package is published as `deep-sky-background` on npm.

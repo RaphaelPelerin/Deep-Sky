@@ -160,14 +160,30 @@ void main() {
   dark = mix(uBg, dark, intro);
   dark *= 1.0 - uFx.z * dot(uv - 0.5, uv - 0.5);
 
-  // light theme: watercolor washes of the (pastel) palette over bright paper; beams, the roaming
-  // light, shockwaves and sweeps add light instead of tinting it
+  // light theme: a slow gradient mesh, large smooth fields of the palette's four colors gliding
+  // over bright paper (bent by shockwaves and the lens like the rest), the nebula as a faint
+  // marbling on top; beams, the roaming light, shockwaves and sweeps add light
   vec3 light = uBg;
-  light = mix(light, nebCol, clamp(smoothstep(0.12, 0.72, nebField) * 0.9 * uMix.x, 0.0, 0.92));
+  if (uMix.x > 0.0) {
+    vec2 w = p * (0.55 + 0.45 * uShape.x);
+    w += 0.32 * vec2(sin(w.y * 1.6 + t * 0.05), sin(w.x * 1.3 - t * 0.04 + 1.1));
+    float f0 = 0.5 + 0.5 * sin(w.x * 1.5 + t * 0.055);
+    float f1 = 0.5 + 0.5 * sin(w.y * 1.9 - w.x * 0.7 - t * 0.047 + 1.7);
+    float f2 = 0.5 + 0.5 * sin((w.x + w.y) * 1.25 + t * 0.041 + 3.1);
+    float f3 = 0.5 + 0.5 * sin(length(w - vec2(0.45 * sin(t * 0.031), 0.15)) * 3.0 - t * 0.06);
+    float k = uMix.x;
+    light = mix(light, uNeb0, smoothstep(0.25, 1.0, f0) * 0.88 * k);
+    light = mix(light, uNeb1, smoothstep(0.32, 1.0, f1) * 0.85 * k);
+    light = mix(light, uNeb2, smoothstep(0.4, 1.0, f2) * 0.8 * k);
+    light = mix(light, uNeb3, smoothstep(0.45, 1.0, f3) * 0.75 * k);
+    light = mix(light, mix(light, nebCol, 0.45), smoothstep(0.4, 0.9, nebField) * 0.3 * k);
+  }
   light = mix(light, aurCol / max(aur, 1e-3), clamp(aurSoft * 0.24 * uMix.y, 0.0, 0.6));
-  light = mix(light, mix(uRays, vec3(1.0), 0.6), clamp(rays * 0.3 * uMix.z, 0.0, 0.7));
-  light = mix(light, uGlow, ml * 0.15 * uMix.w);
+  light = mix(light, vec3(1.0), clamp(rays * 0.32 * uMix.z, 0.0, 0.6));
+  light = mix(light, uGlow, ml * 0.14 * uMix.w);
   light = mix(light, vec3(1.0), clamp(ring * 0.3 + sweep * 0.25, 0.0, 1.0));
+  // the paper shows through towards the top: a bright sky, calm behind headlines
+  light = mix(light, uBg, smoothstep(0.55, 1.1, uv.y) * 0.18);
   light = mix(uBg, light, intro);
 
   vec3 col = mix(light, dark, uPointer.z);
