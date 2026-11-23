@@ -202,7 +202,14 @@ void main() {
     // the folds: a slow field of its own where the colors gather and deepen
     fold = smoothstep(0.45, 1.0, 0.5 + 0.5 * sin(w.x * 0.9 - w.y * 1.4 + t * 0.035 + 2.3)) * k;
   }
-  light = mix(light, aurCol / max(aur, 1e-3), clamp(aurSoft * 0.24 * uMix.y, 0.0, 0.6));
+  // the aurora on a bright sky: a soft veil, the curtains themselves (streaks, edge and all) in
+  // their colors, and a glow that lifts them off the colors behind
+  if (uMix.y > 0.0) {
+    vec3 ac = aurCol / max(aur, 1e-3);
+    light = mix(light, ac, clamp(aurSoft * 0.2 * uMix.y, 0.0, 0.5));
+    light = mix(light, ac, clamp(aur * 0.62 * uMix.y, 0.0, 0.88));
+    light += ac * clamp(aur, 0.0, 1.5) * 0.14 * uMix.y;
+  }
 
   // contrast: a color multiplied by itself is the same hue, richer and deeper. In the folds and
   // towards the edges (a colored vignette, never gray), plus a touch more saturation everywhere

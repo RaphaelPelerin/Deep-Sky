@@ -17,13 +17,13 @@ describe('normalizeOptions', () => {
     expect(r.preset).toBe('abyss');
     expect(r.aurora).toEqual({
       enabled: true,
-      intensity: 0.4,
+      intensity: 0.5,
       position: 0.5,
-      height: 1,
-      speed: 1,
-      waves: 1,
-      curtains: 3,
-      streaks: 1,
+      height: 2,
+      speed: 0.7,
+      waves: 0.6,
+      curtains: 2,
+      streaks: 0.3,
       tilt: 0,
       edge: 1,
     });
