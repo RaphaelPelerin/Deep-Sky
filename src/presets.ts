@@ -249,43 +249,6 @@ export const presets: Record<PresetName, DeepSkyPreset> = {
     grid: false,
   },
 
-  /** a cool morning: pale blue and periwinkle mist, a hint of mint */
-  mist: {
-    theme: 'light',
-    palette: {
-      dark: {
-        background: '#05070c',
-        nebula: ['#18243d', '#22406e', '#5b86b8', '#3d3a75'],
-        aurora: ['#8fb8ff', '#b9a8ff'],
-        rays: '#cfe0ff',
-        glow: '#8fb3ff',
-        stars: ['#dce8ff', '#c7d3ff', '#ffffff'],
-        spotlight: ['#8fb3ff', '#a99cff'],
-        lines: '#a9c2ff',
-        meteor: '#eef4ff',
-        grid: 'rgba(143, 179, 255, 0.12)',
-      },
-      light: {
-        background: '#f3f6fa',
-        nebula: ['#93c5fd', '#a5b4fc', '#7dd3fc', '#c4b5fd'],
-        aurora: ['#c8e6f5', '#d6d0f5'],
-        rays: '#ffffff',
-        glow: '#a9c4f2',
-        stars: ['#ffffff', '#ffffff', '#e3ecff'],
-        spotlight: ['#bfdbfe', '#c7d2fe'],
-        lines: '#5b7db8',
-        meteor: '#5b7db8',
-        grid: 'rgba(91, 125, 184, 0.1)',
-      },
-    },
-    nebula: { intensity: 1, scale: 0.75, shimmer: 0 },
-    aurora: false,
-    rays: { intensity: 0.9 },
-    stars: { density: 0.6, twinkle: 0.7 },
-    meteors: { frequency: 0.5 },
-    grid: false,
-  },
-
   /** cherry blossom: pink and rose petals of light, a lavender breeze */
   blossom: {
     theme: 'light',

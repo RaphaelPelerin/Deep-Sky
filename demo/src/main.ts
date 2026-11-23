@@ -627,6 +627,8 @@ function layoutHolds() {
   // the small viewport on phones: steady while the address bar comes and goes
   const h = document.documentElement.clientHeight;
   const room = h - NAV;
+  // big screens zoom the page content: measures come in screen pixels, styles take its own
+  const z = parseFloat(getComputedStyle(document.querySelector('main')!).zoom) || 1;
   for (const track of holds) {
     const section = track.firstElementChild as HTMLElement;
     const top = section.getBoundingClientRect().top;
@@ -637,11 +639,11 @@ function layoutHolds() {
     const fits = content <= room - 48;
     const stick = Math.round(fits ? NAV + (room - content) / 2 - start : h - 32 - start - content);
     track.classList.add('holding');
-    track.style.setProperty('--stick', `${stick}px`);
+    track.style.setProperty('--stick', `${stick / z}px`);
     // links land halfway through a centered hold (80px: the page's scroll-padding-top), and at
     // the start of a taller section
-    const hold = track.offsetHeight - section.offsetHeight;
-    track.style.scrollMarginTop = fits ? `${stick - 80 - hold / 2}px` : '';
+    const hold = (track.offsetHeight - section.offsetHeight) * z;
+    track.style.scrollMarginTop = fits ? `${(stick - 80 - hold / 2) / z}px` : '';
   }
 }
 const onHoldChange = () => (holdFrame ||= requestAnimationFrame(layoutHolds));

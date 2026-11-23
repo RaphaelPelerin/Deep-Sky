@@ -9,7 +9,6 @@ export const PRESET_INFO: Record<PresetName, { label: string; desc: string }> = 
   graphite: { label: 'Graphite', desc: 'Monochrome and quiet, made for product UIs.' },
   daybreak: { label: 'Daybreak', desc: 'Sunrise: peach, rose and lilac. Light first.' },
   sunset: { label: 'Sunset', desc: 'Hot red and orange against electric blue. Light first.' },
-  mist: { label: 'Mist', desc: 'A cool morning haze of blues. Light first.' },
   blossom: { label: 'Blossom', desc: 'Cherry blossom pinks and lavender. Light first.' },
   lagoon: { label: 'Lagoon', desc: 'Turquoise water and dancing sunlight. Light first.' },
   porcelain: { label: 'Porcelain', desc: 'Warm whites and soft grays for product UIs. Light first.' },

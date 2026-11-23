@@ -114,7 +114,7 @@ pre {
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 0 max(20px, calc((100vw - 1160px) / 2));
+  padding: 0 max(20px, calc((100vw - 1160px * var(--z)) / 2));
   border-bottom: 1px solid transparent;
   transition:
     background-color 0.3s,
@@ -228,7 +228,7 @@ pre {
 /* ---------- hero ---------- */
 
 .hero {
-  min-height: 100svh;
+  min-height: calc(100svh / var(--z));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -486,7 +486,7 @@ pre {
 .hold.holding::after {
   content: '';
   display: block;
-  height: var(--hold, 40svh);
+  height: var(--hold, calc(40svh / var(--z)));
 }
 
 .eyebrow {
@@ -1244,11 +1244,11 @@ input[type='range']::-moz-range-thumb {
 
 /* held longer: the model materializes meanwhile */
 #models {
-  --hold: 70svh;
+  --hold: calc(70svh / var(--z));
 }
 
 .models {
-  min-height: 100svh;
+  min-height: calc(100svh / var(--z));
   display: flex;
   align-items: center;
   gap: 24px;
@@ -1258,16 +1258,16 @@ input[type='range']::-moz-range-thumb {
 .model-stage {
   flex: 1;
   min-width: 0;
-  height: min(72svh, 700px);
+  height: min(calc(72svh / var(--z)), 700px);
   pointer-events: none;
 }
 
 /* on every section: the stage stays on screen, and the model with it */
 .model-pinned .model-stage {
   position: fixed;
-  top: 14svh;
-  right: max(20px, calc((100vw - 1160px) / 2 + 20px));
-  width: min(46vw, 560px);
+  top: calc(14svh / var(--z));
+  right: max(20px, calc((100vw - 1160px * var(--z)) / (2 * var(--z)) + 20px));
+  width: min(calc(46vw / var(--z)), 560px);
 }
 
 @media (max-width: 900px) {
@@ -1536,16 +1536,153 @@ input[type='range']::-moz-range-thumb {
 }
 
 @media (max-width: 520px) {
-  .band {
-    grid-template-columns: 1fr;
-  }
-  .band > div + div {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
   .install {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ---------- big screens ---------- */
+
+/*
+ * Past 1800px wide, the whole page grows instead of floating small in the middle: the content
+ * is zoomed (not the sky behind it). Viewport units inside zoomed content are zoomed too, so
+ * those rules divide by --z, and the script that holds sections reads it
+ */
+:root {
+  --z: 1;
+}
+@media (min-width: 1800px) {
+  :root {
+    --z: 1.2;
+  }
+}
+@media (min-width: 2300px) {
+  :root {
+    --z: 1.4;
+  }
+}
+@media (min-width: 3200px) {
+  :root {
+    --z: 1.8;
+  }
+}
+main,
+.footer,
+.nav > *,
+.fab,
+.hud,
+.panel,
+.toast {
+  zoom: var(--z);
+}
+
+/* ---------- touch, notches, phones ---------- */
+
+/* what the page says matches how it is used */
+@media (hover: none) {
+  .if-hover {
+    display: none;
+  }
+}
+@media (hover: hover) {
+  .if-touch {
+    display: none;
+  }
+}
+
+/* clear of the notch and the home bar */
+.fab {
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 720px) {
+  /* the playground button: a round icon, small enough never to hide what you read */
+  .fab {
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    justify-content: center;
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+  }
+  .fab svg {
+    width: 22px;
+    height: 22px;
+  }
+  .fab-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* the end of the page scrolls clear of it */
+  .footer {
+    padding-bottom: 84px;
+  }
+  /* the framework tabs scroll sideways, and fade out where more of them wait */
+  .tabs {
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    padding-right: 24px;
+    scroll-snap-type: x proximity;
+  }
+  .tab {
+    scroll-snap-align: start;
+  }
+  .tab {
+    height: 36px;
+  }
+  .code {
+    padding: 16px 18px;
+    font-size: 12.5px;
+  }
+  .panel {
+    height: min(78dvh, 640px);
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 520px) {
+  /* presets and layers two by two: the whole choice in a glance, not a long scroll */
+  .presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .preset {
+    padding: 8px 8px 12px;
+    border-radius: 16px;
+  }
+  .preset-swatch {
+    aspect-ratio: 4 / 3;
+    margin-bottom: 8px;
+    border-radius: 10px;
+  }
+  .preset-name {
+    font-size: 15px;
+  }
+  .preset-desc {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .layers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* the narrowest phones: the install command on one line, the numbers a size smaller */
+@media (max-width: 400px) {
+  .install {
+    gap: 8px;
+    padding: 0 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .band strong {
+    font-size: 1.3rem;
   }
 }
 

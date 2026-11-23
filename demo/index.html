@@ -114,7 +114,7 @@
       <section class="band" aria-label="In numbers">
         <div><strong id="stat-size">16 kB</strong><span>gzipped, zero dependencies</span></div>
         <div><strong>Worker</strong><span>renders off the main thread</span></div>
-        <div><strong>7 layers + 3D</strong><span>glTF models lit by the sky</span></div>
+        <div><strong>8 layers + 3D</strong><span>glTF models lit by the sky</span></div>
         <div><strong>Any stack</strong><span>React, Vue, Svelte, Angular, HTML</span></div>
       </section>
 
@@ -179,7 +179,7 @@
               </div>
               <h3>Fully themeable</h3>
               <p>
-                Eleven presets, every color and layer configurable, and a smooth crossfade between
+                Ten presets, every color and layer configurable, and a smooth crossfade between
                 dark and light themes.
               </p>
             </article>
@@ -218,10 +218,11 @@
       <div class="hold" id="layers">
         <section class="section">
           <p class="eyebrow">Anatomy</p>
-          <h2>Seven layers, all yours.</h2>
+          <h2>Eight layers, all yours.</h2>
           <p class="section-lead">
-            Hover a layer to see it alone, tick it to switch it on or off. Fine-tune each one in
-            the playground.
+            <span class="if-hover">Hover a layer to see it alone, tick it to switch it on or off.</span>
+            <span class="if-touch">Tap a layer to switch it on or off.</span> Fine-tune each one in the
+            playground.
           </p>
           <div class="layers" id="layer-list"></div>
         </section>
@@ -268,7 +269,7 @@
       <div class="hold" id="presets">
         <section class="section">
           <p class="eyebrow">Presets</p>
-          <h2>Eleven moods to start from.</h2>
+          <h2>Ten moods to start from.</h2>
           <p class="section-lead">Pick one, then make it yours in the playground.</p>
           <div class="presets" id="preset-list"></div>
         </section>
@@ -308,7 +309,7 @@
         <circle cx="10" cy="12" r="2" />
         <circle cx="18" cy="18" r="2" />
       </svg>
-      Playground
+      <span class="fab-label">Playground</span>
     </button>
     <aside class="panel" id="panel" aria-label="Playground" aria-hidden="true" data-deep-sky-ignore></aside>
     <div class="hud" id="hud" hidden></div>

@@ -22,7 +22,7 @@ describe('normalizeOptions', () => {
   it('takes the theme of a light-first preset unless told otherwise', () => {
     expect(normalizeOptions({ preset: 'daybreak' }).theme).toBe('light');
     expect(normalizeOptions({ preset: 'daybreak', theme: 'dark' }).theme).toBe('dark');
-    for (const name of ['mist', 'blossom', 'lagoon', 'porcelain'] as const) {
+    for (const name of ['sunset', 'blossom', 'lagoon', 'porcelain'] as const) {
       expect(normalizeOptions({ preset: name }).theme).toBe('light');
     }
     expect(normalizeOptions({ preset: 'cosmos' }).theme).toBe('dark');

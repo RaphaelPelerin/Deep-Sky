@@ -9,7 +9,6 @@ export type PresetName =
   | 'graphite'
   | 'daybreak'
   | 'sunset'
-  | 'mist'
   | 'blossom'
   | 'lagoon'
   | 'porcelain';

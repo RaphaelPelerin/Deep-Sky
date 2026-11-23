@@ -27,7 +27,7 @@ and 3D models lit by that sky. It renders in a Web Worker, so your app never dro
 - **Adapts to the device.** It measures its own frame time, lowers its resolution and then its frame rate on slower GPUs, backs off while your page runs long tasks, and pauses when off-screen.
 - **3D models, lit by the sky.** Drop in a glTF file or a built-in shape: the cursor light, the aurora and the nebula light it, shockwaves bend it. Chrome, glass, hologram, neon wire and more, with bloom and light shafts.
 - **Feels alive.** A light follows the cursor, stars swirl around it and link into constellations, clicks send shockwaves through the nebula, shooting stars cross the sky.
-- **Fully themeable.** Eleven presets (six made for light pages), every color and every layer configurable live, with a smooth crossfade between dark and light themes.
+- **Fully themeable.** Ten presets (five made for light pages), every color and every layer configurable live, with a smooth crossfade between dark and light themes.
 - **Works everywhere.** Vanilla JS, React, Vue, Svelte, Angular, a `<deep-sky>` tag or a `<script>` from a CDN. TypeScript types included.
 - **Polite by default.** Respects `prefers-reduced-motion`, is hidden from assistive tech, never blocks clicks, and falls back gracefully when WebGL or workers are missing.
 - **Small.** 16 kB gzipped, zero dependencies. The 3D layer (15 kB) is only downloaded by pages that use it.
@@ -42,9 +42,9 @@ Night skies:
 
 Light first (a vivid gradient mesh gliding over bright paper, sunbeams and white sparkles):
 
-| ![Sunset](.github/assets/sunset.webp) | ![Daybreak](.github/assets/daybreak.webp) | ![Mist](.github/assets/mist.webp) | ![Blossom](.github/assets/blossom.webp) | ![Lagoon](.github/assets/lagoon.webp) |
-| :--: | :--: | :--: | :--: | :--: |
-| `sunset` | `daybreak` | `mist` | `blossom` | `lagoon` |
+| ![Sunset](.github/assets/sunset.webp) | ![Daybreak](.github/assets/daybreak.webp) | ![Blossom](.github/assets/blossom.webp) | ![Lagoon](.github/assets/lagoon.webp) |
+| :--: | :--: | :--: | :--: |
+| `sunset` | `daybreak` | `blossom` | `lagoon` |
 
 Plus two quiet ones for product UIs: `graphite` (dark) and `porcelain` (light). Every preset has a dark and a light palette, and `theme` picks one. Build your own in the [playground](https://deep-sky-omega.vercel.app) and copy the generated code.
 
@@ -270,7 +270,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 
 | Option | Type | Default | |
 | --- | --- | --- | --- |
-| `preset` | `'cosmos' \| 'ember' \| 'abyss' \| 'synthwave' \| 'graphite' \| 'daybreak' \| 'mist' \| 'blossom' \| 'lagoon' \| 'porcelain'` or a preset object | `'cosmos'` | Starting point for everything else |
+| `preset` | `'cosmos' \| 'ember' \| 'abyss' \| 'synthwave' \| 'graphite' \| 'daybreak' \| 'sunset' \| 'blossom' \| 'lagoon' \| 'porcelain'` or a preset object | `'cosmos'` | Starting point for everything else |
 | `theme` | `'dark' \| 'light' \| 'auto'` | preset's, else `'dark'` | `auto` follows `prefers-color-scheme`; changes crossfade |
 | `palette` | `{ dark?: Partial<Palette>, light?: Partial<Palette> }` | preset's | See [palette](#palette) |
 | `speed` | `number` | `1` | Time multiplier, `0` freezes the motion |
