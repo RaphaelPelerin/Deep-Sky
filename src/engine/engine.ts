@@ -70,6 +70,11 @@ const UNIFORMS = [
   'uMix',
   'uFx',
   'uDay',
+  'uMeshA',
+  'uMeshB',
+  'uMeshP',
+  'uMeshC',
+  'uMeshBg',
   'uAuroraA',
   'uAuroraB',
   'uNoise',
@@ -136,6 +141,8 @@ function mixPalette(a: EnginePalette, b: EnginePalette, t: number): EnginePalett
       mix(a.nebula[3], b.nebula[3]),
     ],
     aurora: [mix(a.aurora[0], b.aurora[0]), mix(a.aurora[1], b.aurora[1])],
+    mesh: a.mesh.map((c, i) => mix(c, b.mesh[i])),
+    meshBase: mix(a.meshBase, b.meshBase),
     rays: mix(a.rays, b.rays),
     glow: mix(a.glow, b.glow),
     stars: [mix(a.stars[0], b.stars[0]), mix(a.stars[1], b.stars[1]), mix(a.stars[2], b.stars[2])],
@@ -457,6 +464,14 @@ export class Engine {
     gl.uniform4f(u.uMix, cfg.nebula, cfg.aurora, cfg.rays, cfg.glow);
     gl.uniform4f(u.uFx, cfg.lens, cfg.grain, cfg.vignette, cfg.shimmer);
     gl.uniform4f(u.uDay, cfg.daylight[0], cfg.daylight[1], cfg.daylight[2], cfg.daylight[3]);
+    const [intensity, softness, drift, flow, silk, depth] = cfg.mesh;
+    gl.uniform4f(u.uMeshA, intensity, 8.5 / (softness * softness), drift, flow);
+    if (intensity > 0) {
+      gl.uniform2f(u.uMeshB, silk, depth);
+      gl.uniform4fv(u.uMeshP, cfg.meshPoints);
+      gl.uniform3fv(u.uMeshC, p.mesh.flat());
+      gl.uniform3fv(u.uMeshBg, p.meshBase);
+    }
     gl.uniform4f(u.uAuroraA, ...cfg.auroraShape);
     gl.uniform4f(u.uAuroraB, cfg.auroraForm[0], cfg.auroraForm[1], cfg.auroraForm[2], 0);
     gl.uniform4f(

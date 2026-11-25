@@ -1,4 +1,5 @@
 import {
+  meshColors,
   presetNames,
   presets,
   qualities,
@@ -8,7 +9,7 @@ import {
   type ResolvedOptions,
 } from 'deep-sky-background';
 import type { LayerKey } from './code';
-import { PRESET_INFO, swatch } from './meta';
+import { PRESET_INFO, PRESET_MESH, swatch } from './meta';
 
 export interface PlaygroundHost {
   state(): ResolvedOptions;
@@ -163,6 +164,25 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: 'Gradient mesh',
+    layer: 'mesh',
+    open: true,
+    controls: [
+      select('mesh.layout', 'Layout', [
+        ['diagonal', 'Diagonal'],
+        ['horizon', 'Horizon'],
+        ['bloom', 'Bloom'],
+        ['corners', 'Corners'],
+      ]),
+      range('mesh.intensity', 'Intensity', 0, 1, 0.02),
+      range('mesh.softness', 'Softness', 0.4, 2.5, 0.05),
+      range('mesh.drift', 'Drift', 0, 3, 0.05),
+      range('mesh.flow', 'Flow', 0, 3, 0.05),
+      range('mesh.silk', 'Silk', 0, 2, 0.05),
+      range('mesh.depth', 'Night (dark theme)', 0, 3, 0.05),
+    ],
+  },
+  {
     title: 'Daylight (light theme)',
     layer: 'daylight',
     controls: [
@@ -245,6 +265,7 @@ const GROUPS: Group[] = [
 const COLORS: [string, keyof Palette, number[]][] = [
   ['Background', 'background', []],
   ['Nebula', 'nebula', [0, 1, 2, 3]],
+  ['Mesh', 'mesh', [0, 1, 2, 3, 4, 5]],
   ['Aurora', 'aurora', [0, 1]],
   ['Beams · glow', 'rays', []],
   ['', 'glow', []],
@@ -397,7 +418,7 @@ export function createPlayground(panel: HTMLElement, host: PlaygroundHost) {
     chip.addEventListener('click', () => host.setPreset(name));
     syncs.push(() => {
       chip.setAttribute('aria-pressed', String(host.state().preset === name));
-      dot.style.background = swatch(presets[name].palette[host.isDark() ? 'dark' : 'light']);
+      dot.style.background = swatch(presets[name].palette[host.isDark() ? 'dark' : 'light'], PRESET_MESH[name]);
     });
     chips.append(chip);
   }
@@ -466,19 +487,21 @@ export function createPlayground(panel: HTMLElement, host: PlaygroundHost) {
       sw.title = `${String(key)}${i >= 0 ? ` ${i + 1}` : ''}`;
       const current = () => {
         const p = host.state().palette[host.isDark() ? 'dark' : 'light'];
-        const v = p[key];
+        const v = key === 'mesh' ? meshColors(p) : p[key];
         return Array.isArray(v) ? v[i] : (v as string);
       };
       input.addEventListener('input', () =>
         host.change((s) => {
           const p = s.palette[host.isDark() ? 'dark' : 'light'];
+          // a palette without mesh colors of its own takes the ones it shows
+          if (key === 'mesh') p.mesh = [...meshColors(p)];
           const v = p[key];
           if (Array.isArray(v)) v[i] = input.value;
           else (p as unknown as Record<string, string>)[key] = input.value;
         }),
       );
       syncs.push(() => {
-        const hex = toHex(current());
+        const hex = toHex(current() ?? '#000000');
         input.value = hex;
         sw.style.setProperty('--c', hex);
       });

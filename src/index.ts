@@ -3,6 +3,8 @@ export { presets, presetNames } from './presets';
 export {
   DEFAULT_CLICK_IGNORE,
   defaults,
+  meshColors,
+  meshLayouts,
   mergeOptions,
   modelDefaults,
   normalizeOptions,

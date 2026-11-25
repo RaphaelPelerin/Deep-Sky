@@ -1,8 +1,10 @@
-import { parseColor } from './color';
+import { parseColor, toOklab } from './color';
 import { MATERIALS, SHAPES, type EngineConfig, type EnginePalette, type RGB } from './engine/protocol';
 import { presets } from './presets';
 import type {
   Color,
+  MeshLayout,
+  MeshPoint,
   ModelOptions,
   Palette,
   PaletteOverrides,
@@ -37,6 +39,7 @@ export const defaults: Defaults = {
   animate: 'auto',
   intro: true,
   nebula: { enabled: true, intensity: 1, scale: 1, shimmer: 0.22 },
+  mesh: { enabled: false, intensity: 1, layout: 'diagonal', softness: 1, drift: 1, flow: 1, silk: 0.5, depth: 1 },
   daylight: { enabled: true, contrast: 1, sheen: 1, bokeh: 1, split: 0 },
   aurora: {
     enabled: true,
@@ -95,6 +98,47 @@ export const modelDefaults: Omit<ResolvedModel, 'src'> = {
   opacity: 1,
   reveal: 1,
 };
+
+/** where the colors of each mesh layout sit: x, y from the top, reach */
+export const meshLayouts: Record<MeshLayout, Required<MeshPoint>[]> = {
+  diagonal: [
+    { x: 0, y: 0.06, size: 1.05 },
+    { x: 0.14, y: 0.68, size: 0.95 },
+    { x: 0.46, y: 0.42, size: 0.75 },
+    { x: 1, y: 0.2, size: 1.05 },
+    { x: 0.86, y: 1.02, size: 1 },
+    { x: 0.66, y: 0.62, size: 0.75 },
+  ],
+  horizon: [
+    { x: 0.24, y: 1.06, size: 1.05 },
+    { x: 0.82, y: 1, size: 1 },
+    { x: 0.3, y: 0.62, size: 0.9 },
+    { x: 0.82, y: 0.54, size: 0.9 },
+    { x: 0.2, y: 0.02, size: 1.1 },
+    { x: 0.8, y: -0.02, size: 1.1 },
+  ],
+  bloom: [
+    { x: 0.5, y: 0.56, size: 0.85 },
+    { x: 0.16, y: 0.3, size: 0.95 },
+    { x: 0.84, y: 0.32, size: 0.95 },
+    { x: 0.1, y: 1, size: 0.95 },
+    { x: 0.9, y: 1, size: 0.95 },
+    { x: 0.5, y: -0.06, size: 0.9 },
+  ],
+  corners: [
+    { x: 0, y: 0, size: 1.05 },
+    { x: 1, y: 0.04, size: 1.05 },
+    { x: 1, y: 1, size: 1.05 },
+    { x: 0, y: 0.96, size: 1.05 },
+    { x: 0.36, y: 0.5, size: 0.8 },
+    { x: 0.68, y: 0.48, size: 0.8 },
+  ],
+};
+
+/** the colors of a palette's mesh */
+export function meshColors(p: Palette): Color[] {
+  return p.mesh && p.mesh.length > 1 ? p.mesh.slice(0, 6) : [p.nebula[0], p.nebula[1], p.nebula[2], p.nebula[3], p.aurora[0], p.aurora[1]];
+}
 
 function resolveModels(value: DeepSkyOptions['models']): ResolvedModel[] {
   if (!value) return [];
@@ -163,6 +207,9 @@ function palette(base: Palette, override: Partial<Palette> | undefined): Palette
   );
   for (const [key, value] of Object.entries(defined(override))) {
     const prev = out[key];
+    // a mesh has as many colors as it is given
+    const size = key === 'mesh' && Array.isArray(value) ? Math.max(value.length, Array.isArray(prev) ? prev.length : 0) : 0;
+    if (size && Array.isArray(prev)) while (prev.length < size) prev.push((value as Color[])[prev.length]);
     out[key] =
       Array.isArray(prev) && Array.isArray(value)
         ? prev.map((c: Color, i) => (value[i] as Color | undefined) ?? c)
@@ -196,6 +243,7 @@ export function normalizeOptions(options: DeepSkyOptions = {}): ResolvedOptions 
     animate: options.animate ?? preset.animate ?? defaults.animate,
     intro: options.intro ?? preset.intro ?? defaults.intro,
     nebula: layer({ ...defaults.nebula }, preset.nebula, options.nebula),
+    mesh: layer({ ...defaults.mesh }, preset.mesh, options.mesh),
     daylight: layer({ ...defaults.daylight }, preset.daylight, options.daylight),
     aurora: layer({ ...defaults.aurora }, preset.aurora, options.aurora),
     rays: layer({ ...defaults.rays }, preset.rays, options.rays),
@@ -276,6 +324,8 @@ function enginePalette(p: Palette): EnginePalette {
     background: rgb(p.background),
     nebula: [rgb(p.nebula[0]), rgb(p.nebula[1]), rgb(p.nebula[2]), rgb(p.nebula[3])],
     aurora: [rgb(p.aurora[0]), rgb(p.aurora[1])],
+    mesh: Array.from({ length: 6 }, (_, i) => toOklab(parseColor(meshColors(p)[i] ?? p.background))),
+    meshBase: toOklab(parseColor(p.background)),
     rays: rgb(p.rays),
     glow: rgb(p.glow),
     stars: [rgb(p.stars[0]), rgb(p.stars[1]), rgb(p.stars[2])],
@@ -289,6 +339,9 @@ function enginePalette(p: Palette): EnginePalette {
 /** what the engine needs: parsed colors, clamped numbers, 0 for disabled layers */
 export function toEngineConfig(r: ResolvedOptions): EngineConfig {
   const on = (enabled: boolean, value: number) => (enabled ? value : 0);
+  const layout = Array.isArray(r.mesh.layout) ? r.mesh.layout : (meshLayouts[r.mesh.layout] ?? meshLayouts.diagonal);
+  // a theme with fewer colors than points melts the missing ones into its background
+  const points = Math.min(6, layout.length, Math.max(meshColors(r.palette.dark).length, meshColors(r.palette.light).length));
   return {
     palettes: { dark: enginePalette(r.palette.dark), light: enginePalette(r.palette.light) },
     speed: clamp(r.speed, 0, 10),
@@ -296,6 +349,19 @@ export function toEngineConfig(r: ResolvedOptions): EngineConfig {
     nebula: on(r.nebula.enabled, clamp(r.nebula.intensity, 0, 4)),
     nebulaScale: clamp(r.nebula.scale, 0.1, 10),
     shimmer: clamp(r.nebula.shimmer, 0, 1),
+    mesh: [
+      on(r.mesh.enabled && points > 0, clamp(r.mesh.intensity, 0, 1)),
+      clamp(r.mesh.softness, 0.3, 3),
+      clamp(r.mesh.drift, 0, 3),
+      clamp(r.mesh.flow, 0, 3),
+      clamp(r.mesh.silk, 0, 2),
+      clamp(r.mesh.depth, 0, 3),
+    ],
+    meshPoints: Array.from({ length: 6 }, (_, i) =>
+      i < points
+        ? [clamp(layout[i].x, -1, 2), 1 - clamp(layout[i].y, -1, 2), clamp(layout[i].size ?? 1, 0.2, 3), 1]
+        : [0, 0, 1, 0],
+    ).flat(),
     daylight: [
       on(r.daylight.enabled, clamp(r.daylight.contrast, 0, 2)),
       on(r.daylight.enabled, clamp(r.daylight.sheen, 0, 2)),

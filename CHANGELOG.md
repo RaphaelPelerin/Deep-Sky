@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Gradient mesh**: `mesh`, a new layer for both themes. Up to six vivid colors melt into each other, wander and flow, with folds of light like silk. Four layouts or your own points, its own colors per theme (`palette.mesh`), and a night that shows between them in the dark theme. Colors are mixed in OKLab, so hot and cold meet through a clean color instead of gray.
+- **New presets**: `horizon`, `iris`, `mirage` and `polar`. `sunset` is remade with the mesh.
+- `meshColors()` and `meshLayouts` are exported.
+
 ## 0.3.0 (2026-11-23)
 
 - **A new light theme.** A slow gradient mesh of the palette's colors, vivid and smooth, over bright paper, with the nebula as a faint marbling, instead of faint gray tints. Beams, the roaming light, shockwaves and sweeps add light, stars are white sparkles, the aurora is a soft veil, and the grain is halved. Every preset has new light colors.

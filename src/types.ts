@@ -9,6 +9,10 @@ export type PresetName =
   | 'graphite'
   | 'daybreak'
   | 'sunset'
+  | 'horizon'
+  | 'iris'
+  | 'mirage'
+  | 'polar'
   | 'blossom'
   | 'lagoon'
   | 'porcelain';
@@ -28,6 +32,8 @@ export interface Palette {
   nebula: [Color, Color, Color, Color];
   /** aurora: lower edge, upper fade */
   aurora: [Color, Color];
+  /** gradient mesh: 2 to 6 colors, one per point of its layout (default: the nebula's and the aurora's) */
+  mesh?: Color[];
   /** light beams */
   rays: Color;
   /** roaming light, shockwaves and light sweeps */
@@ -62,6 +68,45 @@ export interface NebulaOptions extends Layer {
   scale?: number;
   /** slow drift of the colors towards warm highlights, 0–1 (default 0.22) */
   shimmer?: number;
+}
+
+/** Where the colors of the gradient mesh sit */
+export type MeshLayout =
+  /** hot corner to cold corner: two colors on the left, one in the middle, three on the right */
+  | 'diagonal'
+  /** a landscape: two colors along the bottom, two in the middle, two at the top */
+  | 'horizon'
+  /** one color glowing in the middle, the others around it */
+  | 'bloom'
+  /** one color per corner, two in the middle */
+  | 'corners';
+
+/** One color of the mesh: `palette.mesh` gives the colors, in the same order */
+export interface MeshPoint {
+  /** fraction of the container from the left; a little outside is fine */
+  x: number;
+  /** fraction of the container from the top */
+  y: number;
+  /** how far its color reaches, 0.2–3 (default 1) */
+  size?: number;
+}
+
+/** A gradient mesh: large, vivid fields of color that melt into each other and drift, in both themes */
+export interface MeshOptions extends Layer {
+  /** how much it covers the background, 0–1 (default 1) */
+  intensity?: number;
+  /** where the colors sit: a layout, or your own points (2 to 6) (default 'diagonal') */
+  layout?: MeshLayout | MeshPoint[];
+  /** how softly the colors melt into each other, 0.3–3 (default 1; lower = more distinct) */
+  softness?: number;
+  /** how far the colors wander, 0–3 (default 1, 0 holds them in place) */
+  drift?: number;
+  /** how much the whole sky flows and folds, 0–3 (default 1, 0 = round, still shapes) */
+  flow?: number;
+  /** soft folds of light running through the colors, like silk, 0–2 (default 0.5) */
+  silk?: number;
+  /** dark theme: how much of the night shows between the colors, 0–3 (default 1) */
+  depth?: number;
 }
 
 /** the light theme's finish: only drawn while the sky is light */
@@ -248,6 +293,8 @@ export interface DeepSkyOptions {
   intro?: boolean;
 
   nebula?: boolean | NebulaOptions;
+  /** large fields of color that melt into each other and drift (off unless the preset has one) */
+  mesh?: boolean | MeshOptions;
   /** the light theme's contrast, iridescent sheen and bokeh */
   daylight?: boolean | DaylightOptions;
   aurora?: boolean | AuroraOptions;
@@ -316,6 +363,7 @@ export interface ResolvedOptions {
   animate: boolean | 'auto';
   intro: boolean;
   nebula: Required<NebulaOptions>;
+  mesh: Required<MeshOptions>;
   daylight: Required<DaylightOptions>;
   aurora: Required<AuroraOptions>;
   rays: Required<RaysOptions>;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { mergeOptions, normalizeOptions, qualities, toEngineConfig } from '../src/options';
+import { toOklab } from '../src/color';
+import { mergeOptions, meshColors, meshLayouts, normalizeOptions, qualities, toEngineConfig } from '../src/options';
 import { presetNames, presets } from '../src/presets';
 
 describe('normalizeOptions', () => {
@@ -59,7 +60,6 @@ describe('normalizeOptions', () => {
     const off = normalizeOptions({ daylight: false });
     expect(off.daylight.enabled).toBe(false);
     expect(toEngineConfig(off).daylight).toEqual([0, 0, 0, 0]);
-    expect(normalizeOptions({ preset: 'sunset' }).daylight.split).toBe(1);
     expect(toEngineConfig(normalizeOptions({ daylight: { sheen: 9 } })).daylight[1]).toBe(2);
   });
 
@@ -120,6 +120,56 @@ describe('normalizeOptions', () => {
         expect(p.spotlight).toHaveLength(2);
       }
     }
+  });
+});
+
+describe('mesh', () => {
+  it('is off by default, on with its preset or an object', () => {
+    expect(toEngineConfig(normalizeOptions()).mesh[0]).toBe(0);
+    expect(toEngineConfig(normalizeOptions({ preset: 'sunset' })).mesh[0]).toBe(1);
+    expect(normalizeOptions({ mesh: { drift: 2 } }).mesh).toMatchObject({ enabled: true, drift: 2, layout: 'diagonal' });
+    expect(toEngineConfig(normalizeOptions({ preset: 'sunset', mesh: false })).mesh[0]).toBe(0);
+  });
+
+  it('takes its colors from the nebula and the aurora when the palette has none', () => {
+    const { dark } = presets.cosmos.palette;
+    expect(meshColors(dark)).toEqual([...dark.nebula, ...dark.aurora]);
+    expect(meshColors(presets.iris.palette.light)).toHaveLength(6);
+  });
+
+  it('accepts points, flips them, clamps them and counts the colors', () => {
+    const c = toEngineConfig(
+      normalizeOptions({
+        mesh: { layout: [{ x: 0.2, y: 0.25 }, { x: 9, y: 1, size: 99 }, { x: 0.5, y: 0.5 }] },
+        palette: { dark: { mesh: ['#f00', '#00f'] }, light: { mesh: ['#f00', '#00f'] } },
+      }),
+    );
+    expect(c.meshPoints).toHaveLength(24);
+    expect(c.meshPoints.slice(0, 8)).toEqual([0.2, 0.75, 1, 1, 2, 0, 3, 1]);
+    // two colors: the third point is not used
+    expect(c.meshPoints[11]).toBe(0);
+    expect(c.palettes.dark.mesh).toHaveLength(6);
+  });
+
+  it('merges colors one by one over a preset, without touching it', () => {
+    const r = normalizeOptions({ preset: 'iris', palette: { light: { mesh: ['#123456'] } } });
+    expect(r.palette.light.mesh?.[0]).toBe('#123456');
+    expect(r.palette.light.mesh?.slice(1)).toEqual(presets.iris.palette.light.mesh?.slice(1));
+    expect(presets.iris.palette.light.mesh?.[0]).not.toBe('#123456');
+  });
+
+  it('falls back to a layout it knows', () => {
+    const c = toEngineConfig(normalizeOptions({ mesh: { layout: 'nope' as never } }));
+    expect(c.meshPoints.slice(0, 2)).toEqual([0, 1 - meshLayouts.diagonal[0].y]);
+  });
+});
+
+describe('toOklab', () => {
+  it('matches known values', () => {
+    const near = (a: number[], b: number[]) => a.forEach((v, i) => expect(v).toBeCloseTo(b[i], 3));
+    near(toOklab([1, 1, 1]), [1, 0, 0]);
+    near(toOklab([1, 0, 0]), [0.628, 0.2249, 0.1258]);
+    near(toOklab([0, 0, 0]), [0, 0, 0]);
   });
 });
 

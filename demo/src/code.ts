@@ -10,6 +10,7 @@ import {
 
 export const LAYERS = [
   'nebula',
+  'mesh',
   'daylight',
   'aurora',
   'rays',

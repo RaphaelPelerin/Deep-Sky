@@ -39,6 +39,16 @@
   color-scheme: light;
 }
 
+/* a vivid sky in the light theme: white text, as on a photo */
+:root[data-vivid] {
+  --accent: #e6f0ff;
+  --fg: #fff;
+  --fg-2: rgba(255, 255, 255, 0.92);
+  --fg-3: rgba(255, 255, 255, 0.78);
+  --line: rgba(255, 255, 255, 0.2);
+  --line-2: rgba(255, 255, 255, 0.34);
+}
+
 html {
   background: var(--bg);
   scroll-behavior: smooth;
@@ -190,8 +200,8 @@ pre {
   border-color: var(--line-2);
 }
 
-:root[data-theme='dark'] .icon-moon,
-:root[data-theme='light'] .icon-sun {
+:root[data-theme='dark']:not([data-vivid]) .icon-moon,
+:root:is([data-theme='light'], [data-vivid]) .icon-sun {
   display: none;
 }
 
@@ -286,6 +296,14 @@ pre {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+:root[data-vivid] :is(.lead, .nav a, .hint, .section-head p) {
+  text-shadow: 0 1px 16px rgb(0 10 40 / 0.22);
+}
+
+:root[data-vivid] .shine {
+  background-image: linear-gradient(100deg, #fff 0%, #fff3c9 50%, #e3f6ff 100%);
 }
 
 :root[data-theme='light'] .shine {
@@ -579,7 +597,7 @@ pre {
 
 .layers {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 10px;
 }
 

@@ -28,7 +28,7 @@ import {
   type Framework,
   type LayerKey,
 } from './code';
-import { LAYER_INFO, PRESET_INFO, hslToHex, layerColor, swatch } from './meta';
+import { LAYER_INFO, PRESET_INFO, PRESET_MESH, hslToHex, layerColor, skyLight, swatch } from './meta';
 import { createPlayground } from './playground';
 
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) =>
@@ -143,7 +143,9 @@ const themeToggle = $('#theme-toggle');
 
 function syncTheme() {
   const dark = isDark();
-  root.dataset.theme = dark ? 'dark' : 'light';
+  // a vivid sky takes white text, even in the light theme
+  root.dataset.theme = dark || skyLight(state.palette.light, state.mesh) < 0.72 ? 'dark' : 'light';
+  root.toggleAttribute('data-vivid', !dark && root.dataset.theme === 'dark');
   themeMeta.content = (dark ? state.palette.dark : state.palette.light).background;
   themeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
 }
@@ -305,7 +307,7 @@ function renderPresets() {
   for (const b of presetButtons) {
     const name = b.dataset.preset as PresetName;
     b.setAttribute('aria-pressed', String(state.preset === name));
-    (b.firstElementChild as HTMLElement).style.background = swatch(presets[name].palette[theme]);
+    (b.firstElementChild as HTMLElement).style.background = swatch(presets[name].palette[theme], PRESET_MESH[name]);
   }
 }
 
@@ -350,7 +352,12 @@ function randomize() {
     nebula: [c(0, 70, 28), c(35, 80, 40), c(150, 85, 40), c(300, 75, 52)],
     aurora: [c(140, 100, 58), c(260, 100, 66)],
   };
+  // six neighbors on the color wheel, one of them across it
+  const turn = pick(22, 46);
+  const hues = [0, 1, 2, 3, 4, 5].map((i) => (i === 3 ? 180 : i * turn));
+  next.mesh.layout = (['diagonal', 'horizon', 'bloom', 'corners'] as const)[Math.floor(Math.random() * 4)];
   Object.assign(next.palette.dark, shared, {
+    mesh: hues.map((dh, i) => c(dh, 85, [50, 46, 40, 48, 44, 10][i])),
     background: c(0, 45, 3),
     rays: c(20, 100, 80),
     glow: c(10, 100, 70),
@@ -360,6 +367,7 @@ function randomize() {
     meteor: '#ffffff',
   });
   Object.assign(next.palette.light, shared, {
+    mesh: hues.map((dh, i) => c(dh, 95, [60, 62, 58, 60, 72, 66][i])),
     background: c(0, 45, 98),
     rays: c(20, 90, 68),
     glow: c(10, 90, 64),

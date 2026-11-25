@@ -11,6 +11,9 @@ export interface EnginePalette {
   background: RGB;
   nebula: [RGB, RGB, RGB, RGB];
   aurora: [RGB, RGB];
+  /** gradient mesh colors, then the background, in OKLab */
+  mesh: RGB[];
+  meshBase: RGB;
   rays: RGB;
   glow: RGB;
   stars: [RGB, RGB, RGB];
@@ -30,6 +33,10 @@ export interface EngineConfig {
   nebula: number;
   nebulaScale: number;
   shimmer: number;
+  /** gradient mesh: intensity (0 = off), softness, drift, flow, silk, depth */
+  mesh: [number, number, number, number, number, number];
+  /** 6 points × (x, y up, reach, 1 when used) */
+  meshPoints: number[];
   /** light theme only: contrast, sheen, bokeh, split (0 = off) */
   daylight: [number, number, number, number];
   aurora: number;

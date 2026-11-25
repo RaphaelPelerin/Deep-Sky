@@ -20,6 +20,22 @@ export function parseColor(input: string): RGBA {
   return out;
 }
 
+/** sRGB (0..1) to OKLab: where colors melt into each other without turning gray or muddy */
+export function toOklab([r, g, b]: readonly number[]): [number, number, number] {
+  const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  const R = lin(r);
+  const G = lin(g);
+  const B = lin(b);
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B);
+  const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B);
+  const s = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
 /** `rgba(r, g, b, a)` string, for CSS gradients */
 export function toRgba(input: string, alpha = 1): string {
   const [r, g, b, a] = parseColor(input);

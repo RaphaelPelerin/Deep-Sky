@@ -23,6 +23,11 @@ uniform vec4 uMix;        // nebula, aurora, rays, glow intensities
 uniform vec4 uFx;         // lens, grain, vignette, shimmer
 uniform vec4 uShape;      // nebula scale, aurora offset, rays spread, intro duration
 uniform vec4 uDay;        // light theme: contrast, sheen, bokeh, split
+uniform vec4 uMeshA;      // gradient mesh: intensity, sharpness, drift, flow
+uniform vec2 uMeshB;      // gradient mesh: silk, depth (dark theme)
+uniform vec4 uMeshP[6];   // gradient mesh points: xy (0..1, y up), z: reach, w: 1 when used
+uniform vec3 uMeshC[6];   // their colors, in OKLab
+uniform vec3 uMeshBg;     // the background, in OKLab
 uniform vec4 uAuroraA;    // aurora: height, speed, waves, streaks
 uniform vec4 uAuroraB;    // aurora: curtains, tilt, edge
 uniform sampler2D uNoise; // 256×256, four independent random values per texel, repeating
@@ -61,6 +66,69 @@ vec4 fbm4(vec2 p) {
     a *= 0.5;
   }
   return v;
+}
+
+vec3 fromOklab(vec3 c) {
+  vec3 lms = vec3(
+    c.x + 0.3963377774 * c.y + 0.2158037573 * c.z,
+    c.x - 0.1055613458 * c.y - 0.0638541728 * c.z,
+    c.x - 0.0894841775 * c.y - 1.291485548 * c.z);
+  lms = lms * lms * lms;
+  vec3 rgb = clamp(vec3(
+    4.0767416621 * lms.x - 3.3077115913 * lms.y + 0.2309699292 * lms.z,
+    -1.2684380046 * lms.x + 2.6097574011 * lms.y - 0.3413193965 * lms.z,
+    -0.0041960863 * lms.x - 0.7034186147 * lms.y + 1.707614701 * lms.z), 0.0, 1.0);
+  return mix(rgb * 12.92, 1.055 * pow(max(rgb, 1e-5), vec3(1.0 / 2.4)) - 0.055, step(0.0031308, rgb));
+}
+
+// the gradient mesh: every point pulls the pixel towards its color by how near it is. The points
+// wander and breathe, and the plane they sit on flows, so that the colors never look like discs.
+// Mixed in OKLab: hot and cold meet through a clean color, not through gray
+vec3 meshSky(vec2 q, float aspect, float t) {
+  // as wide as tall, whatever the screen
+  vec2 k = vec2(sqrt(aspect), 1.0 / sqrt(aspect));
+  vec2 g = q * k;
+  float flow = uMeshA.w;
+  vec2 n = noise4(g * 1.15 + vec2(t * 0.021, -t * 0.027)).xy - 0.5;
+  g += flow * (0.2 * n
+    + 0.075 * vec2(sin(g.y * 3.1 + t * 0.13), sin(g.x * 2.7 - t * 0.11 + 1.3))
+    + 0.03 * vec2(sin(g.y * 6.3 - t * 0.17 + 2.0), sin(g.x * 5.7 + t * 0.15 + 4.1)));
+  // a little of the night in every pixel: it takes over where no color reaches
+  float base = uMeshB.y * 0.32 * uPointer.z + 1e-4;
+  vec3 lab = uMeshBg * base;
+  float chroma = length(uMeshBg.yz) * base;
+  float total = base;
+  for (int i = 0; i < 6; i++) {
+    vec4 m = uMeshP[i];
+    if (m.w < 0.5) break;
+    float fi = float(i);
+    vec2 c = m.xy + uMeshA.z * vec2(
+      0.085 * sin(t * (0.1 + 0.017 * fi) + fi * 2.4) + 0.03 * sin(t * 0.23 + fi * 4.1),
+      0.1 * cos(t * (0.085 + 0.021 * fi) + fi * 1.7));
+    float s = m.z * (1.0 + 0.12 * uMeshA.z * sin(t * 0.14 + fi * 3.1));
+    vec2 d = g - c * k;
+    float w = exp(-dot(d, d) * uMeshA.y / (s * s));
+    lab += uMeshC[i] * w;
+    chroma += length(uMeshC[i].yz) * w;
+    total += w;
+  }
+  lab /= total;
+  // opposite hues cancel out on their way to each other: give the mix back most of its color
+  float c = length(lab.yz);
+  lab.yz *= 1.0 + 0.65 * clamp(chroma / total / max(c, 1e-3) - 1.0, 0.0, 1.6);
+  // silk: folds of light across the flow, lighter on their crests, richer in their hollows
+  if (uMeshB.x > 0.0) {
+    float a = g.x * 2.3 + g.y * 3.4 + 3.2 * n.x + t * 0.1;
+    float f = sin(a) * 0.6 + sin(a * 1.9 - n.y * 4.0 - t * 0.07 + 1.0) * 0.4;
+    float lift = f * uMeshB.x * 0.085;
+    lab.x *= 1.0 + lift * mix(1.0, 1.8, uPointer.z);
+    lab.yz *= 1.0 - lift * 1.1;
+  }
+  // at night the colors burn at their heart and fall off fast into the dark
+  float night = uPointer.z * min(uMeshB.y, 1.5);
+  float heart = smoothstep(0.16, 0.62, lab.x);
+  lab *= mix(1.0, mix(0.52, 1.12, heart), night);
+  return fromOklab(lab);
 }
 
 void main() {
@@ -159,8 +227,12 @@ void main() {
 
   float intro = uShape.w > 0.0 ? smoothstep(0.0, uShape.w, clock) : 1.0;
 
+  // gradient mesh: what both themes are painted on
+  vec3 ground = uBg;
+  if (uMeshA.x > 0.0) ground = mix(uBg, meshSky(p / vec2(aspect, 1.0) + 0.5, aspect, t), uMeshA.x);
+
   // dark theme: additive light over a deep background
-  vec3 dark = uBg;
+  vec3 dark = ground;
   dark += nebCol * neb * 0.75 * uMix.x;
   dark += aurCol * 0.45 * uMix.y;
   dark += uRays * rays * 0.17 * uMix.z;
@@ -172,7 +244,7 @@ void main() {
   // light theme: a slow gradient mesh, large smooth fields of the palette's four colors gliding
   // over bright paper (bent by shockwaves and the lens like the rest), the nebula as a faint
   // marbling on top; then its finish (uDay): depth, an iridescent sheen and bokeh
-  vec3 light = uBg;
+  vec3 light = ground;
   float fold = 0.0;
   // all of it is skipped while the sky is fully dark
   if (uPointer.z < 0.999) {
@@ -183,7 +255,8 @@ void main() {
     float f1 = 0.5 + 0.5 * sin(w.y * 1.9 - w.x * 0.7 - t * 0.047 + 1.7);
     float f2 = 0.5 + 0.5 * sin((w.x + w.y) * 1.25 + t * 0.041 + 3.1);
     float f3 = 0.5 + 0.5 * sin(length(w - vec2(0.45 * sin(t * 0.031), 0.15)) * 3.0 - t * 0.06);
-    float k = uMix.x;
+    // a gradient mesh already paints the sky: only the marbling goes on it
+    float k = uMix.x * (1.0 - uMeshA.x);
     // split: the colors keep to one side of a slowly turning, gently waving diagonal; the
     // background holds the other side, and the third color lights the seam between them
     float side = 1.0;
@@ -199,8 +272,8 @@ void main() {
     light = mix(light, uNeb1, smoothstep(0.32, 1.0, f1) * 0.85 * k);
     light = mix(light, uNeb2, smoothstep(0.4, 1.0, f2) * 0.8 * k);
     light = mix(light, uNeb3, smoothstep(0.45, 1.0, f3) * 0.75 * k);
-    light = mix(light, mix(light, nebCol, 0.45), smoothstep(0.64, 0.86, nebField) * 0.3 * k);
-    light = mix(light, uNeb2, seam * 0.55 * uMix.x);
+    light = mix(light, mix(light, nebCol, 0.45), smoothstep(0.64, 0.86, nebField) * 0.3 * mix(k, uMix.x, uMeshA.x));
+    light = mix(light, uNeb2, seam * 0.55 * uMix.x * (1.0 - uMeshA.x));
     // the folds: a slow field of its own where the colors gather and deepen
     fold = smoothstep(0.45, 1.0, 0.5 + 0.5 * sin(w.x * 0.9 - w.y * 1.4 + t * 0.035 + 2.3)) * k;
   }
@@ -259,7 +332,7 @@ void main() {
 
   light = mix(light, vec3(1.0), clamp(ring * 0.3 + sweep * 0.25, 0.0, 1.0));
   // the paper shows through towards the top: a bright sky, calm behind headlines
-  light = mix(light, uBg, smoothstep(0.55, 1.1, uv.y) * 0.18);
+  light = mix(light, uBg, smoothstep(0.55, 1.1, uv.y) * 0.18 * (1.0 - uMeshA.x));
   }
   light = mix(uBg, light, intro);
 

@@ -1,7 +1,7 @@
 import workerSource from 'virtual:deep-sky-worker';
 import { toRgba } from './color';
 import type { EngineEvent, EngineInit, EngineMessage } from './engine/protocol';
-import { anchorPlace, mergeOptions, modelKey, normalizeOptions, toEngineConfig } from './options';
+import { anchorPlace, meshColors, meshLayouts, mergeOptions, modelKey, normalizeOptions, toEngineConfig } from './options';
 import type { DeepSkyInstance, DeepSkyMode, DeepSkyOptions } from './types';
 
 interface Link {
@@ -393,7 +393,19 @@ export function mountDeepSky(
     root.style.backgroundColor = p.background;
     if (fallback) {
       const [a, b, c] = p.nebula;
-      fallback.style.background =
+      fallback.style.background = r.mesh.enabled
+        ? // its first layer on top: the last points are the widest
+          meshColors(p)
+            .map((color, i) => {
+              const layout = Array.isArray(r.mesh.layout) ? r.mesh.layout : (meshLayouts[r.mesh.layout] ?? meshLayouts.diagonal);
+              const { x, y, size = 1 } = layout[i] ?? {};
+              return x === undefined || y === undefined
+                ? ''
+                : `radial-gradient(${size * 60}% ${size * 60}% at ${x * 100}% ${y * 100}%, ${toRgba(color)}, transparent 75%)`;
+            })
+            .filter(Boolean)
+            .join(', ')
+        :
         `radial-gradient(40% 40% at 20% 15%, ${toRgba(a, 0.35)}, transparent 70%), ` +
         `radial-gradient(35% 35% at 85% 45%, ${toRgba(b, 0.3)}, transparent 70%), ` +
         `radial-gradient(35% 35% at 45% 95%, ${toRgba(c, 0.22)}, transparent 70%)`;
