@@ -4,6 +4,7 @@
 
 - **Gradient mesh**: `mesh`, a new layer for both themes. Up to six vivid colors melt into each other, wander and flow, with folds of light like silk. Four layouts or your own points, its own colors per theme (`palette.mesh`), and a night that shows between them in the dark theme. Colors are mixed in OKLab, so hot and cold meet through a clean color instead of gray.
 - **New presets**: `horizon`, `iris`, `mirage` and `polar`. `sunset` is remade with the mesh.
+- **Sunsets**: three new layers, `sun`, `clouds` (a deck lit by the sun) and `sea` (waves that mirror everything above), and three presets made of them: `flamingo`, `mango` and `afterglow`. They work over any preset.
 - `meshColors()` and `meshLayouts` are exported.
 
 ## 0.3.0 (2026-11-23)

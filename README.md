@@ -12,7 +12,7 @@ and 3D models lit by that sky. It renders in a Web Worker, so your app never dro
 **[Live demo & playground](https://deep-sky-omega.vercel.app)** · [Install](#install) · [3D models](#3d-models) · [Frameworks](#frameworks) · [Options](#options) · [How it works](#how-it-works)
 
 [![npm](https://img.shields.io/npm/v/deep-sky-background?color=8ab4ff&label=npm)](https://www.npmjs.com/package/deep-sky-background)
-[![gzip](https://img.shields.io/badge/gzip-23%20kB-8ab4ff)](#performance)
+[![gzip](https://img.shields.io/badge/gzip-26%20kB-8ab4ff)](#performance)
 [![dependencies](https://img.shields.io/badge/dependencies-0-8ab4ff)](package.json)
 [![types](https://img.shields.io/badge/types-TypeScript-c9a7ff)](src/types.ts)
 [![license](https://img.shields.io/badge/license-MIT-c9a7ff)](LICENSE)
@@ -27,10 +27,10 @@ and 3D models lit by that sky. It renders in a Web Worker, so your app never dro
 - **Adapts to the device.** It measures its own frame time, lowers its resolution and then its frame rate on slower GPUs, backs off while your page runs long tasks, and pauses when off-screen.
 - **3D models, lit by the sky.** Drop in a glTF file or a built-in shape: the cursor light, the aurora and the nebula light it, shockwaves bend it. Chrome, glass, hologram, neon wire and more, with bloom and light shafts.
 - **Feels alive.** A light follows the cursor, stars swirl around it and link into constellations, clicks send shockwaves through the nebula, shooting stars cross the sky.
-- **Fully themeable.** Fourteen presets (nine made for light pages), every color and every layer configurable live, with a smooth crossfade between dark and light themes.
+- **Fully themeable.** Seventeen presets (twelve made for light pages), every color and every layer configurable live, with a smooth crossfade between dark and light themes.
 - **Works everywhere.** Vanilla JS, React, Vue, Svelte, Angular, a `<deep-sky>` tag or a `<script>` from a CDN. TypeScript types included.
 - **Polite by default.** Respects `prefers-reduced-motion`, is hidden from assistive tech, never blocks clicks, and falls back gracefully when WebGL or workers are missing.
-- **Small.** 23 kB gzipped, zero dependencies. The 3D layer (15 kB) is only downloaded by pages that use it.
+- **Small.** 26 kB gzipped, zero dependencies. The 3D layer (15 kB) is only downloaded by pages that use it.
 
 ## Presets
 
@@ -46,6 +46,13 @@ Skies painted by a gradient mesh, vivid colors that melt into each other and dri
 | :--: | :--: | :--: | :--: |
 | ![Sunset, dark](.github/assets/sunset-dark.webp) | ![Horizon, dark](.github/assets/horizon-dark.webp) | ![Iris, dark](.github/assets/iris-dark.webp) | ![Mirage, dark](.github/assets/mirage-dark.webp) |
 | `sunset` | `horizon` | `iris` | `mirage` |
+
+Sunsets on a warm coast, with a sun, clouds it lights and a sea that mirrors them:
+
+| ![Flamingo](.github/assets/flamingo.webp) | ![Mango](.github/assets/mango.webp) | ![Afterglow](.github/assets/afterglow.webp) |
+| :--: | :--: | :--: |
+| ![Flamingo, dark](.github/assets/flamingo-dark.webp) | ![Mango, dark](.github/assets/mango-dark.webp) | ![Afterglow, dark](.github/assets/afterglow-dark.webp) |
+| `flamingo` | `mango` | `afterglow` |
 
 Light first (soft colors gliding over bright paper, sunbeams and white sparkles):
 
@@ -277,7 +284,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 
 | Option | Type | Default | |
 | --- | --- | --- | --- |
-| `preset` | `'cosmos' \| 'ember' \| 'abyss' \| 'synthwave' \| 'graphite' \| 'daybreak' \| 'sunset' \| 'horizon' \| 'iris' \| 'mirage' \| 'polar' \| 'blossom' \| 'lagoon' \| 'porcelain'` or a preset object | `'cosmos'` | Starting point for everything else |
+| `preset` | `'cosmos' \| 'ember' \| 'abyss' \| 'synthwave' \| 'graphite' \| 'daybreak' \| 'sunset' \| 'horizon' \| 'iris' \| 'mirage' \| 'polar' \| 'flamingo' \| 'mango' \| 'afterglow' \| 'blossom' \| 'lagoon' \| 'porcelain'` or a preset object | `'cosmos'` | Starting point for everything else |
 | `theme` | `'dark' \| 'light' \| 'auto'` | preset's, else `'dark'` | `auto` follows `prefers-color-scheme`; changes crossfade |
 | `palette` | `{ dark?: Partial<Palette>, light?: Partial<Palette> }` | preset's | See [palette](#palette) |
 | `speed` | `number` | `1` | Time multiplier, `0` freezes the motion |
@@ -303,7 +310,10 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 | Layer | Settings (defaults) |
 | --- | --- |
 | `nebula` | `intensity` (1), `scale` (1, higher = smaller clouds), `shimmer` (0.22, slow drift towards warm tones) |
-| `mesh` | A gradient mesh: large, vivid fields of color that melt into each other and drift, in both themes. Off unless the preset has one, `mesh: true` turns it on. `layout` (`'diagonal'`, `'horizon'`, `'bloom'`, `'corners'`, or your own points: `[{ x, y, size }]`, 2 to 6), `intensity` (1, 0 to 1), `softness` (1), `drift` (1, how far the colors wander, 0 holds them), `flow` (1, how much the sky flows and folds), `silk` (0.5, folds of light), `depth` (1, how much night shows between the colors in the dark theme). Its colors are `palette.mesh` |
+| `mesh` | A gradient mesh: large, vivid fields of color that melt into each other and drift, in both themes. Off unless the preset has one, `mesh: true` turns it on. `layout` (`'diagonal'`, `'horizon'`, `'coast'`, `'bloom'`, `'corners'`, or your own points: `[{ x, y, size }]`, 2 to 6), `intensity` (1, 0 to 1), `softness` (1), `drift` (1, how far the colors wander, 0 holds them), `flow` (1, how much the sky flows and folds), `silk` (0.5, folds of light), `depth` (1, how much night shows between the colors in the dark theme). Its colors are `palette.mesh` |
+| `sun` | Off unless the preset has one. `intensity` (1), `x` (0.5), `y` (0.6, from the top), `size` (0.24, diameter, fraction of the height), `halo` (1) |
+| `clouds` | A deck that recedes to the horizon, lit by the sun. Off unless the preset has it. `intensity` (0.9), `cover` (0.5), `scale` (1, higher = smaller clouds), `speed` (1) |
+| `sea` | Water that mirrors the mesh, the sun and the clouds. Off unless the preset has it. `level` (0.26, height of the horizon), `waves` (1, 0 = a mirror), `glints` (1) |
 | `daylight` | The light theme's finish, 0 to 2: `contrast` (1, richer, deeper colors in the folds and towards the edges), `sheen` (1, a pearly iridescent band sweeping across), `bokeh` (1, soft discs of light drifting up), `split` (0 to 1, default 0: hot and cold sides, the colors gather on one side of a slowly turning diagonal and the background holds the other). Only drawn while the sky is light |
 | `aurora` | `intensity` (1), `position` (0.7, from 0 = bottom to 1 = top), `height` (1, how far the curtains rise), `curtains` (3, 1 to 5), `waves` (1, 0 = straight bands), `speed` (1, 0 holds them still), `streaks` (1, 0 = smooth), `tilt` (0, -1 to 1, slants them across the screen), `edge` (1, sharpness of the lower edge) |
 | `rays` | `intensity` (1), `spread` (1, angular density of the beams) |
@@ -327,6 +337,8 @@ Any CSS color works (`#hex`, `rgb()`, `hsl()`, `oklch()`, named colors). Tuples 
 | `stars` | Three star tints |
 | `spotlight` | `[center, edge]` of the cursor spotlight |
 | `mesh` | 2 to 6 colors, one per point of the `mesh` layout (default: the nebula's and the aurora's) |
+| `sun` | The sun, its halo and its glints (default: the glow) |
+| `clouds` | `[facing the sun, away from it]` (default: from the nebula) |
 | `lines` | Constellations and click rings |
 | `meteor` | Shooting stars |
 | `grid` | Grid lines (alpha is honored) |
@@ -447,7 +459,7 @@ flowchart LR
 
 Particles run at 60 fps while the cursor moves and 30 fps at rest (always 60 on `high` and `ultra`). When frames get slow, the adaptive mode lowers the shader resolution down to `minScale`, then its frame rate. A long task on your page (big render, heavy JSON…) makes it back off for two seconds. Nothing renders while the sky is off-screen or the tab is hidden.
 
-Size: 23 kB gzipped for the default entry, worker included. The main-thread engine (12 kB) is only downloaded when a fallback needs it, and the 3D layer (15 kB) when a page shows models.
+Size: 26 kB gzipped for the default entry, worker included. The main-thread engine (14 kB) is only downloaded when a fallback needs it, and the 3D layer (15 kB) when a page shows models.
 
 ## Browser support
 

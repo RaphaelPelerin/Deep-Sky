@@ -14,6 +14,8 @@ export interface EnginePalette {
   /** gradient mesh colors, then the background, in OKLab */
   mesh: RGB[];
   meshBase: RGB;
+  sun: RGB;
+  clouds: [RGB, RGB];
   rays: RGB;
   glow: RGB;
   stars: [RGB, RGB, RGB];
@@ -37,6 +39,12 @@ export interface EngineConfig {
   mesh: [number, number, number, number, number, number];
   /** 6 points × (x, y up, reach, 1 when used) */
   meshPoints: number[];
+  /** x, y (up), radius, intensity (0 = off), halo */
+  sun: [number, number, number, number, number];
+  /** intensity (0 = off), cover, scale, speed */
+  clouds: [number, number, number, number];
+  /** horizon height (0 = off), waves, glints */
+  sea: [number, number, number];
   /** light theme only: contrast, sheen, bokeh, split (0 = off) */
   daylight: [number, number, number, number];
   aurora: number;

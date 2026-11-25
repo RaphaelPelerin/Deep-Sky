@@ -28,6 +28,12 @@ uniform vec2 uMeshB;      // gradient mesh: silk, depth (dark theme)
 uniform vec4 uMeshP[6];   // gradient mesh points: xy (0..1, y up), z: reach, w: 1 when used
 uniform vec3 uMeshC[6];   // their colors, in OKLab
 uniform vec3 uMeshBg;     // the background, in OKLab
+uniform vec4 uSun;        // sun: xy (0..1, y up), radius, intensity
+uniform vec3 uSunC;
+uniform vec4 uClouds;     // clouds: intensity, cover, scale, speed
+uniform vec3 uCloudLit;   // their side that faces the sun
+uniform vec3 uCloudDim;   // their side away from it
+uniform vec4 uSea;        // sea: horizon height (0 = none), waves, glints; w: the sun's halo
 uniform vec4 uAuroraA;    // aurora: height, speed, waves, streaks
 uniform vec4 uAuroraB;    // aurora: curtains, tilt, edge
 uniform sampler2D uNoise; // 256×256, four independent random values per texel, repeating
@@ -229,7 +235,72 @@ void main() {
 
   // gradient mesh: what both themes are painted on
   vec3 ground = uBg;
-  if (uMeshA.x > 0.0) ground = mix(uBg, meshSky(p / vec2(aspect, 1.0) + 0.5, aspect, t), uMeshA.x);
+  vec2 q = p / vec2(aspect, 1.0) + 0.5;
+  // the sea mirrors what is above its horizon: the same sky, read upside down through the waves
+  float hz = uSea.x;
+  float under = 0.0;
+  float depth = 0.0;
+  vec4 wave = vec4(0.5);
+  if (hz > 0.0 && q.y < hz) {
+    under = 1.0;
+    depth = (hz - q.y) / hz;
+    float far = 1.0 / (depth + 0.06);
+    // long crests, with ripples across them
+    float wx = (q.x - 0.5) * aspect * far;
+    wave = noise4(vec2(wx * 2.2 + t * 0.06, far * 6.0 + t * 0.55)) * 0.55
+      + noise4(vec2(wx * 5.5 - t * 0.12, far * 15.0 + t * 0.95)) * 0.3
+      + noise4(vec2(wx * 13.0 + t * 0.2, far * 34.0 + t * 1.5)) * 0.15;
+    // waves get bigger towards us
+    float swell = uSea.y * depth;
+    q = vec2(q.x + (wave.x - 0.5) * 0.07 * swell, hz + (hz - q.y) * 1.02 + (wave.y - 0.5) * 0.42 * swell * (0.35 + depth));
+    q.y = hz + abs(q.y - hz);
+  }
+  if (uMeshA.x > 0.0) ground = mix(uBg, meshSky(q, aspect, t), uMeshA.x);
+  float up = max(q.y - hz, 0.0);
+  vec2 sv = (q - uSun.xy) * vec2(aspect, 1.0);
+  float sd = length(sv);
+  if (uSun.w > 0.0) {
+    float r = uSun.z * min(1.0, aspect * 1.25);
+    float core = 0.5 * exp(-sd * sd / (r * r) * 0.34);
+    float halo = core + 0.42 * exp(-sd * 2.6) * (1.0 + 0.06 * sin(t * 0.5));
+    // a haze along the horizon, brighter under the sun
+    halo += hz > 0.0 ? exp(-up * 13.0) * (0.22 + 0.35 * exp(-sv.x * sv.x * 2.0)) : 0.0;
+    halo *= uSea.w * uSun.w * mix(1.0, 0.75, uPointer.z);
+    // far from the disc its light is redder
+    vec3 warm = mix(uSunC * uSunC * vec3(1.0, 0.72, 0.82), uSunC, clamp(core * 2.2, 0.0, 1.0));
+    ground += (1.0 - ground) * warm * clamp(halo, 0.0, 0.92);
+    // the disc: paler at the top, deeper where it goes down
+    vec3 disc = mix(uSunC * vec3(1.0, 0.88, 0.86), min(uSunC * 1.06 + 0.2, 1.0), smoothstep(-r, r * 0.9, sv.y));
+    ground = mix(ground, disc, smoothstep(r, r * 0.965 - 0.0015, sd) * min(uSun.w, 1.0));
+  }
+  if (uClouds.x > 0.0) {
+    // a deck seen from below: it shrinks as it goes to the horizon
+    float far = 0.78 / (up + 0.19);
+    vec2 cp = vec2((q.x - 0.5) * aspect * far * 1.1, far * 2.2) * uClouds.z + vec2(t * 0.024, t * 0.016) * uClouds.w;
+    cp += 0.9 * (noise4(cp * 0.6 + 7.3).xy - 0.5);
+    float f = fbm4(cp).x;
+    float low = 0.62 - 0.3 * uClouds.y;
+    float body = smoothstep(low, low + 0.2, f);
+    // how much thinner it gets towards the sun: that side takes the light
+    vec2 to = vec2(-sv.x, 0.35 + 0.4 * max(sv.y, 0.0));
+    float lit = clamp(0.5 + (f - fbm4(cp + normalize(to) * 0.28).x) * 3.6, 0.0, 1.0);
+    float near = exp(-sd * 1.5) * min(uSun.w, 1.0);
+    vec3 cloud = mix(uCloudDim, uCloudLit, clamp(lit * 0.75 + near * 0.55 - 0.1, 0.0, 1.0));
+    // a bright lining, strongest where the cloud is thin
+    cloud += (1.0 - cloud) * uSunC * near * (0.35 * lit + 0.65 * body * (1.0 - body) * 4.0 * lit);
+    // the disc burns through the thin ones
+    body *= 1.0 - 0.5 * min(uSun.w, 1.0) * smoothstep(uSun.z * 1.25, uSun.z * 0.85, sd);
+    body *= smoothstep(0.0, 0.07, up) * (1.0 - 0.45 * smoothstep(0.3, 0.8, up));
+    ground = mix(ground, cloud, body * uClouds.x);
+  }
+  if (under > 0.0) {
+    // water: deeper than the sky it mirrors, more and more as it comes to us
+    ground = mix(ground, ground * ground * 0.92, clamp(0.25 + 0.6 * depth, 0.0, 1.0));
+    float path = exp(-pow((uv.x - uSun.x) * aspect / (0.1 + 0.42 * depth), 2.0));
+    float glint = smoothstep(0.52, 0.72, wave.z) * path * (1.0 - 0.35 * depth);
+    glint += 0.16 * smoothstep(0.62, 0.78, wave.w);
+    ground += (1.0 - ground) * uSunC * glint * uSea.z * min(uSun.w, 1.0) * 0.8;
+  }
 
   // dark theme: additive light over a deep background
   vec3 dark = ground;

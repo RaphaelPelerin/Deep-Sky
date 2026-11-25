@@ -171,6 +171,7 @@ const GROUPS: Group[] = [
       select('mesh.layout', 'Layout', [
         ['diagonal', 'Diagonal'],
         ['horizon', 'Horizon'],
+        ['coast', 'Coast'],
         ['bloom', 'Bloom'],
         ['corners', 'Corners'],
       ]),
@@ -180,6 +181,36 @@ const GROUPS: Group[] = [
       range('mesh.flow', 'Flow', 0, 3, 0.05),
       range('mesh.silk', 'Silk', 0, 2, 0.05),
       range('mesh.depth', 'Night (dark theme)', 0, 3, 0.05),
+    ],
+  },
+  {
+    title: 'Sun',
+    layer: 'sun',
+    controls: [
+      range('sun.intensity', 'Intensity', 0, 2, 0.05),
+      range('sun.x', 'Left · right', 0, 1, 0.01),
+      range('sun.y', 'Top · bottom', 0, 1, 0.01),
+      range('sun.size', 'Size', 0.05, 0.8, 0.01),
+      range('sun.halo', 'Halo', 0, 3, 0.05),
+    ],
+  },
+  {
+    title: 'Clouds',
+    layer: 'clouds',
+    controls: [
+      range('clouds.intensity', 'Intensity', 0, 1, 0.02),
+      range('clouds.cover', 'Cover', 0, 1, 0.02),
+      range('clouds.scale', 'Scale', 0.3, 3, 0.05),
+      range('clouds.speed', 'Speed', 0, 4, 0.05),
+    ],
+  },
+  {
+    title: 'Sea',
+    layer: 'sea',
+    controls: [
+      range('sea.level', 'Horizon', 0.05, 0.8, 0.01),
+      range('sea.waves', 'Waves', 0, 3, 0.05),
+      range('sea.glints', 'Glints', 0, 3, 0.05),
     ],
   },
   {

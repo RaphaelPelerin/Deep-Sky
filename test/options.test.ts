@@ -164,6 +164,26 @@ describe('mesh', () => {
   });
 });
 
+describe('sun, clouds and sea', () => {
+  it('are off by default, on with a sunset', () => {
+    const c = toEngineConfig(normalizeOptions());
+    expect([c.sun[3], c.clouds[0], c.sea[0]]).toEqual([0, 0, 0]);
+    const s = toEngineConfig(normalizeOptions({ preset: 'flamingo' }));
+    expect(s.sun[3]).toBe(1);
+    expect(s.clouds[0]).toBeGreaterThan(0);
+    expect(s.sea[0]).toBe(0.25);
+    expect(toEngineConfig(normalizeOptions({ preset: 'flamingo', sea: false })).sea[0]).toBe(0);
+  });
+
+  it('turn on over any preset, with colors from its palette', () => {
+    const c = toEngineConfig(normalizeOptions({ preset: 'cosmos', sun: { y: 0.25, size: 9 }, sea: true }));
+    expect(c.sun.slice(1, 4)).toEqual([0.75, 0.5, 1]);
+    expect(c.sea[0]).toBe(0.26);
+    expect(c.palettes.dark.sun).toEqual(c.palettes.dark.glow);
+    expect(c.palettes.dark.clouds[1]).toEqual(c.palettes.dark.nebula[0]);
+  });
+});
+
 describe('toOklab', () => {
   it('matches known values', () => {
     const near = (a: number[], b: number[]) => a.forEach((v, i) => expect(v).toBeCloseTo(b[i], 3));

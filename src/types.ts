@@ -13,6 +13,9 @@ export type PresetName =
   | 'iris'
   | 'mirage'
   | 'polar'
+  | 'flamingo'
+  | 'mango'
+  | 'afterglow'
   | 'blossom'
   | 'lagoon'
   | 'porcelain';
@@ -34,6 +37,10 @@ export interface Palette {
   aurora: [Color, Color];
   /** gradient mesh: 2 to 6 colors, one per point of its layout (default: the nebula's and the aurora's) */
   mesh?: Color[];
+  /** the sun's disc, its halo and its reflection (default: the glow) */
+  sun?: Color;
+  /** clouds: the side that faces the sun, the side away from it (default: from the nebula) */
+  clouds?: [Color, Color];
   /** light beams */
   rays: Color;
   /** roaming light, shockwaves and light sweeps */
@@ -76,6 +83,8 @@ export type MeshLayout =
   | 'diagonal'
   /** a landscape: two colors along the bottom, two in the middle, two at the top */
   | 'horizon'
+  /** the same over a sea: two colors on its horizon, two above, two at the top */
+  | 'coast'
   /** one color glowing in the middle, the others around it */
   | 'bloom'
   /** one color per corner, two in the middle */
@@ -107,6 +116,42 @@ export interface MeshOptions extends Layer {
   silk?: number;
   /** dark theme: how much of the night shows between the colors, 0–3 (default 1) */
   depth?: number;
+}
+
+/** A sun, its halo, and the haze it lights on the horizon */
+export interface SunOptions extends Layer {
+  /** brightness, 0–2 (default 1) */
+  intensity?: number;
+  /** center, fraction of the container from the left (default 0.5) */
+  x?: number;
+  /** center, fraction of the container from the top; the sea hides what is below its horizon (default 0.6) */
+  y?: number;
+  /** diameter, fraction of the container height, 0.02–1 (default 0.24) */
+  size?: number;
+  /** how far its light spreads, 0–3 (default 1) */
+  halo?: number;
+}
+
+/** A deck of clouds that recedes to the horizon, lit by the sun */
+export interface CloudsOptions extends Layer {
+  /** opacity, 0–1 (default 0.9) */
+  intensity?: number;
+  /** how much of the sky they cover, 0–1 (default 0.5) */
+  cover?: number;
+  /** size: higher = smaller, busier clouds, 0.2–4 (default 1) */
+  scale?: number;
+  /** how fast they drift, 0–5 (default 1) */
+  speed?: number;
+}
+
+/** Water along the bottom: it mirrors everything above its horizon */
+export interface SeaOptions extends Layer {
+  /** height of the horizon, fraction of the container from the bottom, 0.05–0.8 (default 0.26) */
+  level?: number;
+  /** how much the waves break the reflection, 0–3 (default 1, 0 = a mirror) */
+  waves?: number;
+  /** glints of the sun on the water, 0–3 (default 1) */
+  glints?: number;
 }
 
 /** the light theme's finish: only drawn while the sky is light */
@@ -295,6 +340,12 @@ export interface DeepSkyOptions {
   nebula?: boolean | NebulaOptions;
   /** large fields of color that melt into each other and drift (off unless the preset has one) */
   mesh?: boolean | MeshOptions;
+  /** a sun and its halo (off unless the preset has one) */
+  sun?: boolean | SunOptions;
+  /** clouds lit by the sun (off unless the preset has them) */
+  clouds?: boolean | CloudsOptions;
+  /** water that mirrors the sky (off unless the preset has it) */
+  sea?: boolean | SeaOptions;
   /** the light theme's contrast, iridescent sheen and bokeh */
   daylight?: boolean | DaylightOptions;
   aurora?: boolean | AuroraOptions;
@@ -364,6 +415,9 @@ export interface ResolvedOptions {
   intro: boolean;
   nebula: Required<NebulaOptions>;
   mesh: Required<MeshOptions>;
+  sun: Required<SunOptions>;
+  clouds: Required<CloudsOptions>;
+  sea: Required<SeaOptions>;
   daylight: Required<DaylightOptions>;
   aurora: Required<AuroraOptions>;
   rays: Required<RaysOptions>;

@@ -75,6 +75,12 @@ const UNIFORMS = [
   'uMeshP',
   'uMeshC',
   'uMeshBg',
+  'uSun',
+  'uSunC',
+  'uClouds',
+  'uCloudLit',
+  'uCloudDim',
+  'uSea',
   'uAuroraA',
   'uAuroraB',
   'uNoise',
@@ -143,6 +149,8 @@ function mixPalette(a: EnginePalette, b: EnginePalette, t: number): EnginePalett
     aurora: [mix(a.aurora[0], b.aurora[0]), mix(a.aurora[1], b.aurora[1])],
     mesh: a.mesh.map((c, i) => mix(c, b.mesh[i])),
     meshBase: mix(a.meshBase, b.meshBase),
+    sun: mix(a.sun, b.sun),
+    clouds: [mix(a.clouds[0], b.clouds[0]), mix(a.clouds[1], b.clouds[1])],
     rays: mix(a.rays, b.rays),
     glow: mix(a.glow, b.glow),
     stars: [mix(a.stars[0], b.stars[0]), mix(a.stars[1], b.stars[1]), mix(a.stars[2], b.stars[2])],
@@ -472,6 +480,13 @@ export class Engine {
       gl.uniform3fv(u.uMeshC, p.mesh.flat());
       gl.uniform3fv(u.uMeshBg, p.meshBase);
     }
+    const [sx, sy, radius, shine, halo] = cfg.sun;
+    gl.uniform4f(u.uSun, sx, sy, radius, shine);
+    gl.uniform4f(u.uClouds, ...cfg.clouds);
+    gl.uniform4f(u.uSea, cfg.sea[0], cfg.sea[1], cfg.sea[2], halo);
+    gl.uniform3fv(u.uSunC, p.sun);
+    gl.uniform3fv(u.uCloudLit, p.clouds[0]);
+    gl.uniform3fv(u.uCloudDim, p.clouds[1]);
     gl.uniform4f(u.uAuroraA, ...cfg.auroraShape);
     gl.uniform4f(u.uAuroraB, cfg.auroraForm[0], cfg.auroraForm[1], cfg.auroraForm[2], 0);
     gl.uniform4f(

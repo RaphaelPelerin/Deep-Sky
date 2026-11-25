@@ -12,6 +12,9 @@ export const PRESET_INFO: Record<PresetName, { label: string; desc: string }> = 
   horizon: { label: 'Horizon', desc: 'Gold and coral under a rising blue. Light first.' },
   iris: { label: 'Iris', desc: 'Magenta, violet and cyan petals. Light first.' },
   mirage: { label: 'Mirage', desc: 'Turquoise and emerald, gold and coral. Light first.' },
+  flamingo: { label: 'Flamingo', desc: 'A pink evening on a warm coast. Light first.' },
+  mango: { label: 'Mango', desc: 'Golden hour over the water. Light first.' },
+  afterglow: { label: 'Afterglow', desc: 'A red ember on the sea, neon pink and blue. Light first.' },
   polar: { label: 'Polar', desc: 'White light, pale blue, lilac and rose. Light first.' },
   blossom: { label: 'Blossom', desc: 'Cherry blossom pinks and lavender. Light first.' },
   lagoon: { label: 'Lagoon', desc: 'Turquoise water and dancing sunlight. Light first.' },
@@ -26,6 +29,9 @@ export const PRESET_MESH = Object.fromEntries(
 export const LAYER_INFO: { key: Exclude<LayerKey, 'cursor'>; label: string; desc: string }[] = [
   { key: 'nebula', label: 'Nebula', desc: 'Domain-warped fractal clouds' },
   { key: 'mesh', label: 'Gradient mesh', desc: 'Vivid colors that melt and drift' },
+  { key: 'sun', label: 'Sun', desc: 'A disc, its halo, a haze on the horizon' },
+  { key: 'clouds', label: 'Clouds', desc: 'A deck lit by the sun' },
+  { key: 'sea', label: 'Sea', desc: 'Waves that mirror the sky' },
   { key: 'daylight', label: 'Daylight', desc: 'Contrast, sheen and bokeh in light mode' },
   { key: 'aurora', label: 'Aurora', desc: 'Waving curtains of light' },
   { key: 'rays', label: 'Light beams', desc: 'God rays from above' },
@@ -43,7 +49,11 @@ export function swatch(p: Palette, mesh?: ResolvedOptions['mesh'] | null): strin
     const spots = points
       .slice(0, colors.length)
       .map(({ x, y, size = 1 }, i) => `radial-gradient(${size * 52}% ${size * 62}% at ${x * 100}% ${y * 100}%, ${colors[i]}, transparent 78%)`);
-    return [...spots, `linear-gradient(${p.background}, ${p.background})`].join(', ');
+    const sky = p.sun
+      ? [`radial-gradient(circle at 74% 62%, ${p.sun} 0 17%, ${p.sun}66 18%, transparent 46%)`]
+      : [];
+    const sea = p.sun ? [`linear-gradient(transparent 74%, ${p.clouds?.[1] ?? p.background}99 75%)`] : [];
+    return [...sea, ...sky, ...spots, `linear-gradient(${p.background}, ${p.background})`].join(', ');
   }
   return [
     `radial-gradient(60% 80% at 22% 28%, ${p.nebula[2]}b0, transparent 62%)`,
@@ -60,6 +70,12 @@ export function layerColor(p: Palette, key: LayerKey): string {
       return p.nebula[1];
     case 'mesh':
       return meshColors(p)[0];
+    case 'sun':
+      return p.sun ?? p.glow;
+    case 'clouds':
+      return p.clouds?.[0] ?? p.nebula[2];
+    case 'sea':
+      return p.clouds?.[1] ?? p.nebula[0];
     case 'daylight':
       return p.nebula[2];
     case 'aurora':
