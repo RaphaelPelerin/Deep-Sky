@@ -145,6 +145,8 @@ function syncTheme() {
   const dark = isDark();
   // a vivid sky takes white text, even in the light theme
   root.dataset.theme = dark || skyLight(state.palette.light, state.mesh) < 0.72 ? 'dark' : 'light';
+  // nothing to play with in this sky: no hint about the pointer
+  root.toggleAttribute('data-still', !state.cursor.enabled && state.click === 'none');
   root.toggleAttribute('data-vivid', !dark && root.dataset.theme === 'dark');
   themeMeta.content = (dark ? state.palette.dark : state.palette.light).background;
   themeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');

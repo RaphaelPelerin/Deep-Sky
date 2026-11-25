@@ -484,7 +484,7 @@ export class Engine {
     gl.uniform4f(u.uSun, sx, sy, radius, shine);
     gl.uniform4f(u.uClouds, ...cfg.clouds);
     gl.uniform4f(u.uSea, cfg.sea[0], cfg.sea[1], cfg.sea[2], halo);
-    gl.uniform3fv(u.uSunC, p.sun);
+    gl.uniform4f(u.uSunC, p.sun[0], p.sun[1], p.sun[2], cfg.towers);
     gl.uniform3fv(u.uCloudLit, p.clouds[0]);
     gl.uniform3fv(u.uCloudDim, p.clouds[1]);
     gl.uniform4f(u.uAuroraA, ...cfg.auroraShape);

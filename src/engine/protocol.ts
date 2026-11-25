@@ -43,6 +43,8 @@ export interface EngineConfig {
   sun: [number, number, number, number, number];
   /** intensity (0 = off), cover, scale, speed */
   clouds: [number, number, number, number];
+  /** height of the cumulus on the horizon */
+  towers: number;
   /** horizon height (0 = off), waves, glints */
   sea: [number, number, number];
   /** light theme only: contrast, sheen, bokeh, split (0 = off) */

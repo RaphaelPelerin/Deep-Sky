@@ -29,7 +29,7 @@ uniform vec4 uMeshP[6];   // gradient mesh points: xy (0..1, y up), z: reach, w:
 uniform vec3 uMeshC[6];   // their colors, in OKLab
 uniform vec3 uMeshBg;     // the background, in OKLab
 uniform vec4 uSun;        // sun: xy (0..1, y up), radius, intensity
-uniform vec3 uSunC;
+uniform vec4 uSunC;       // its color, w: cumulus towers on the horizon
 uniform vec4 uClouds;     // clouds: intensity, cover, scale, speed
 uniform vec3 uCloudLit;   // their side that faces the sun
 uniform vec3 uCloudDim;   // their side away from it
@@ -135,6 +135,22 @@ vec3 meshSky(vec2 q, float aspect, float t) {
   float heart = smoothstep(0.16, 0.62, lab.x);
   lab *= mix(1.0, mix(0.52, 1.12, heart), night);
   return fromOklab(lab);
+}
+
+// cloud density: large soft shapes, the finer octaves folded into rounded puffs
+float cloudField(vec2 p) {
+  mat2 rot = mat2(0.8, -0.6, 0.6, 0.8);
+  float v = 0.5 * noise4(p).x;
+  p = rot * p * 2.07 + vec2(3.1, 1.7);
+  v += 0.25 * noise4(p).y;
+  p = rot * p * 2.11 + vec2(1.3, 4.9);
+  vec4 n = noise4(p);
+  v += 0.135 * abs(2.0 * n.x - 1.0) + 0.03 * n.y;
+  p = rot * p * 2.17 + vec2(5.7, 2.3);
+  n = noise4(p);
+  v += 0.07 * abs(2.0 * n.z - 1.0) + 0.02 * n.w;
+  p = rot * p * 2.3 + vec2(2.9, 8.1);
+  return v + 0.04 * abs(2.0 * noise4(p).x - 1.0);
 }
 
 void main() {
@@ -252,54 +268,109 @@ void main() {
       + noise4(vec2(wx * 13.0 + t * 0.2, far * 34.0 + t * 1.5)) * 0.15;
     // waves get bigger towards us
     float swell = uSea.y * depth;
-    q = vec2(q.x + (wave.x - 0.5) * 0.07 * swell, hz + (hz - q.y) * 1.02 + (wave.y - 0.5) * 0.42 * swell * (0.35 + depth));
+    q = vec2(q.x + (wave.x - 0.5) * 0.07 * swell, hz + (hz - q.y) * 1.02 + (wave.y - 0.5) * 0.32 * swell * (0.35 + depth));
     q.y = hz + abs(q.y - hz);
   }
   if (uMeshA.x > 0.0) ground = mix(uBg, meshSky(q, aspect, t), uMeshA.x);
   float up = max(q.y - hz, 0.0);
   vec2 sv = (q - uSun.xy) * vec2(aspect, 1.0);
   float sd = length(sv);
-  if (uSun.w > 0.0) {
-    float r = uSun.z * min(1.0, aspect * 1.25);
-    float core = 0.5 * exp(-sd * sd / (r * r) * 0.34);
-    float halo = core + 0.42 * exp(-sd * 2.6) * (1.0 + 0.06 * sin(t * 0.5));
-    // a haze along the horizon, brighter under the sun
-    halo += hz > 0.0 ? exp(-up * 13.0) * (0.22 + 0.35 * exp(-sv.x * sv.x * 2.0)) : 0.0;
-    halo *= uSea.w * uSun.w * mix(1.0, 0.75, uPointer.z);
-    // far from the disc its light is redder
-    vec3 warm = mix(uSunC * uSunC * vec3(1.0, 0.72, 0.82), uSunC, clamp(core * 2.2, 0.0, 1.0));
-    ground += (1.0 - ground) * warm * clamp(halo, 0.0, 0.92);
-    // the disc: paler at the top, deeper where it goes down
-    vec3 disc = mix(uSunC * vec3(1.0, 0.88, 0.86), min(uSunC * 1.06 + 0.2, 1.0), smoothstep(-r, r * 0.9, sv.y));
-    ground = mix(ground, disc, smoothstep(r, r * 0.965 - 0.0015, sd) * min(uSun.w, 1.0));
-  }
+  float sunOn = min(uSun.w, 1.0);
+  // how much of the disc shows through the clouds
+  float clear = 1.0;
   if (uClouds.x > 0.0) {
-    // a deck seen from below: it shrinks as it goes to the horizon
-    float far = 0.78 / (up + 0.19);
-    vec2 cp = vec2((q.x - 0.5) * aspect * far * 1.1, far * 2.2) * uClouds.z + vec2(t * 0.024, t * 0.016) * uClouds.w;
-    cp += 0.9 * (noise4(cp * 0.6 + 7.3).xy - 0.5);
-    float f = fbm4(cp).x;
-    float low = 0.62 - 0.3 * uClouds.y;
-    float body = smoothstep(low, low + 0.2, f);
-    // how much thinner it gets towards the sun: that side takes the light
-    vec2 to = vec2(-sv.x, 0.35 + 0.4 * max(sv.y, 0.0));
-    float lit = clamp(0.5 + (f - fbm4(cp + normalize(to) * 0.28).x) * 3.6, 0.0, 1.0);
-    float near = exp(-sd * 1.5) * min(uSun.w, 1.0);
-    vec3 cloud = mix(uCloudDim, uCloudLit, clamp(lit * 0.75 + near * 0.55 - 0.1, 0.0, 1.0));
-    // a bright lining, strongest where the cloud is thin
-    cloud += (1.0 - cloud) * uSunC * near * (0.35 * lit + 0.65 * body * (1.0 - body) * 4.0 * lit);
-    // the disc burns through the thin ones
-    body *= 1.0 - 0.5 * min(uSun.w, 1.0) * smoothstep(uSun.z * 1.25, uSun.z * 0.85, sd);
-    body *= smoothstep(0.0, 0.07, up) * (1.0 - 0.45 * smoothstep(0.3, 0.8, up));
-    ground = mix(ground, cloud, body * uClouds.x);
+    float near = exp(-sd * 1.9) * sunOn;
+    // the shaded side takes the color of the sky around it: clouds belong to the air they are in
+    vec3 shade = mix(uCloudDim, ground, 0.22);
+    vec3 sunlit = mix(uCloudLit, min(uSunC.rgb * 1.1 + 0.1, 1.0), near * 0.75);
+    float low = 0.64 - 0.3 * uClouds.y;
+
+    // a deck of small clouds seen from below, in rows, shrinking as it goes to the horizon
+    float far = 0.85 / (up + 0.2);
+    vec2 cp = vec2((q.x - 0.5) * aspect * far * 1.25, far * 3.1) * uClouds.z + vec2(t * 0.022, t * 0.014) * uClouds.w;
+    vec4 wide = noise4(cp * 0.42 + 5.1);
+    cp += 0.7 * (wide.xy - 0.5);
+    // patches of them, and clear sky between
+    float patchy = (wide.z - 0.5) * 0.34;
+    float d = cloudField(cp) + patchy - low;
+    float deck = smoothstep(0.0, 0.26, d);
+    if (deck > 0.003) {
+      // two steps towards the sun: how much cloud the light goes through to get here
+      vec2 to = normalize(vec2(-sv.x, 0.4 + max(sv.y, 0.0) * 0.5)) * 0.17;
+      float through = max(cloudField(cp + to) + patchy - low, 0.0) + 0.7 * max(cloudField(cp + to * 2.3) + patchy - low, 0.0);
+      float lit = exp(-through * 6.5) * (0.5 + 0.6 * smoothstep(0.32, 0.0, d));
+      vec3 cloud = mix(shade, sunlit, clamp(lit * 1.25, 0.0, 1.0));
+      // thin edges let the light of a sun behind them through
+      cloud += (1.0 - cloud) * uSunC.rgb * near * (1.0 - smoothstep(0.05, 0.3, d)) * 0.8;
+      deck *= smoothstep(0.02, 0.16, up) * (1.0 - 0.25 * smoothstep(0.4, 0.9, up));
+      ground = mix(ground, cloud, deck * uClouds.x * 0.92);
+      clear *= 1.0 - deck * uClouds.x * 0.6;
+    }
+
+    // towers of cumulus standing on the horizon, their tops rounded and lit
+    if (uSunC.w > 0.0 && up < 0.5) {
+      float x = (q.x - 0.5) * aspect + t * 0.0035 * uClouds.w;
+      vec4 hills = noise4(vec2(x * 1.15 + 3.0, 2.5)) * 0.65 + noise4(vec2(x * 3.1, 9.5)) * 0.35;
+      for (int i = 0; i < 2; i++) {
+        float fi = float(i);
+        float rank = (i == 0 ? hills.x : hills.y);
+        float top = uSunC.w * (0.02 + (0.3 - 0.13 * fi) * smoothstep(0.4, 0.82, rank)) * (0.6 + 0.8 * uClouds.y);
+        if (up > top + 0.09) continue;
+        vec2 bp = vec2(x * (1.0 + 0.35 * fi) + fi * 11.0, up * 1.15) * (6.2 + 2.4 * fi) * uClouds.z - vec2(0.0, t * 0.006);
+        bp += 0.35 * (noise4(bp * 0.8 + 3.7).xy - 0.5);
+        float puff = cloudField(bp);
+        float e = top - up + (puff - 0.5) * 0.2;
+        float body = smoothstep(0.0, 0.026, e);
+        if (body < 0.003) continue;
+        vec2 to = normalize(-sv + vec2(1e-3, 0.02)) * 0.2;
+        float e2 = top - up - to.y * 0.1 + (cloudField(bp + to) - 0.5) * 0.2;
+        // the side that faces the sun, and the tops, under the open sky
+        float lit = clamp(0.36 + (e - e2) * 11.0, 0.0, 1.0) * mix(1.1, 0.5, smoothstep(0.01, 0.17, e));
+        vec3 cloud = mix(shade, sunlit, clamp(lit * 1.2, 0.0, 1.0));
+        cloud += (1.0 - cloud) * uSunC.rgb * near * (1.0 - smoothstep(0.0, 0.05, e)) * 0.85;
+        // their feet melt into the haze
+        body *= smoothstep(-0.01, 0.05 + 0.03 * fi, up) * (0.94 - 0.2 * (1.0 - fi));
+        ground = mix(ground, cloud, body * uClouds.x);
+        clear *= 1.0 - body * 0.85;
+      }
+    }
+  }
+  if (uSun.w > 0.0) {
+    // light is added up, then exposed like film: the disc burns to white, its glow goes through
+    // yellow and orange to red on its own
+    float r = uSun.z * min(1.0, aspect * 1.25);
+    // the air flattens a low sun
+    float flat_ = length(sv * vec2(1.0, 1.07));
+    float disc = smoothstep(r * 1.1, r * 0.8, flat_);
+    // it burns through most of what passes in front of it
+    clear = mix(0.7, 1.0, clear);
+    float edge = sd / r;
+    float glow = 1.5 * exp(-edge * edge * 0.3) + 1.05 * exp(-edge * 0.5);
+    float air = 0.5 * exp(-sd * 2.1) * (1.0 + 0.05 * sin(t * 0.5));
+    // a band of lit haze on the horizon, brightest under the sun
+    if (hz > 0.0) air += exp(-up * 11.0) * (0.1 + 0.42 * exp(-sv.x * sv.x * 2.2));
+    // faint shafts between the clouds
+    vec2 dir = sv / (sd + 1e-3);
+    air += 0.22 * smoothstep(0.5, 0.85, noise4(dir * 3.4 + vec2(t * 0.012, 4.0)).x) * exp(-sd * 2.8) * smoothstep(r, r * 3.0, sd);
+    vec3 tint = uSunC.rgb;
+    vec3 deep = tint * tint * vec3(1.0, 0.8, 0.85);
+    // the lower the light, the more air it crosses
+    vec3 low = mix(vec3(1.0, 0.72, 0.62), vec3(1.0), smoothstep(-r * 1.1, r * 0.9, sv.y));
+    // its own color, not the sky's behind it: a red sun stays red at night
+    ground *= 1.0 - mix(0.25, 0.75, uPointer.z) * disc * clear * sunOn;
+    vec3 light0 = tint * low * disc * mix(2.2, 2.4, uPointer.z) * clear
+      + mix(deep, tint, exp(-edge * 0.7)) * glow * (0.35 + 0.65 * clear) * uSea.w
+      + deep * air * uSea.w;
+    ground = 1.0 - (1.0 - ground) * exp(-light0 * uSun.w * mix(1.0, 0.85, uPointer.z));
   }
   if (under > 0.0) {
     // water: deeper than the sky it mirrors, more and more as it comes to us
     ground = mix(ground, ground * ground * 0.92, clamp(0.25 + 0.6 * depth, 0.0, 1.0));
     float path = exp(-pow((uv.x - uSun.x) * aspect / (0.1 + 0.42 * depth), 2.0));
-    float glint = smoothstep(0.52, 0.72, wave.z) * path * (1.0 - 0.35 * depth);
+    // a long path of light, broken by the crests
+    float glint = (smoothstep(0.42, 0.66, wave.z) * 0.85 + 0.12) * path * (1.0 - 0.3 * depth);
     glint += 0.16 * smoothstep(0.62, 0.78, wave.w);
-    ground += (1.0 - ground) * uSunC * glint * uSea.z * min(uSun.w, 1.0) * 0.8;
+    ground += (1.0 - ground) * uSunC.rgb * glint * uSea.z * min(uSun.w, 1.0) * 0.8;
   }
 
   // dark theme: additive light over a deep background

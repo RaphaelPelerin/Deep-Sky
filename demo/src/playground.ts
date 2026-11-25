@@ -202,6 +202,7 @@ const GROUPS: Group[] = [
       range('clouds.cover', 'Cover', 0, 1, 0.02),
       range('clouds.scale', 'Scale', 0.3, 3, 0.05),
       range('clouds.speed', 'Speed', 0, 4, 0.05),
+      range('clouds.towers', 'Towers', 0, 2, 0.05),
     ],
   },
   {

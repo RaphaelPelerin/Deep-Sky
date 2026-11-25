@@ -12,7 +12,7 @@ and 3D models lit by that sky. It renders in a Web Worker, so your app never dro
 **[Live demo & playground](https://deep-sky-omega.vercel.app)** · [Install](#install) · [3D models](#3d-models) · [Frameworks](#frameworks) · [Options](#options) · [How it works](#how-it-works)
 
 [![npm](https://img.shields.io/npm/v/deep-sky-background?color=8ab4ff&label=npm)](https://www.npmjs.com/package/deep-sky-background)
-[![gzip](https://img.shields.io/badge/gzip-26%20kB-8ab4ff)](#performance)
+[![gzip](https://img.shields.io/badge/gzip-27%20kB-8ab4ff)](#performance)
 [![dependencies](https://img.shields.io/badge/dependencies-0-8ab4ff)](package.json)
 [![types](https://img.shields.io/badge/types-TypeScript-c9a7ff)](src/types.ts)
 [![license](https://img.shields.io/badge/license-MIT-c9a7ff)](LICENSE)
@@ -30,7 +30,7 @@ and 3D models lit by that sky. It renders in a Web Worker, so your app never dro
 - **Fully themeable.** Seventeen presets (twelve made for light pages), every color and every layer configurable live, with a smooth crossfade between dark and light themes.
 - **Works everywhere.** Vanilla JS, React, Vue, Svelte, Angular, a `<deep-sky>` tag or a `<script>` from a CDN. TypeScript types included.
 - **Polite by default.** Respects `prefers-reduced-motion`, is hidden from assistive tech, never blocks clicks, and falls back gracefully when WebGL or workers are missing.
-- **Small.** 26 kB gzipped, zero dependencies. The 3D layer (15 kB) is only downloaded by pages that use it.
+- **Small.** 27 kB gzipped, zero dependencies. The 3D layer (15 kB) is only downloaded by pages that use it.
 
 ## Presets
 
@@ -47,7 +47,7 @@ Skies painted by a gradient mesh, vivid colors that melt into each other and dri
 | ![Sunset, dark](.github/assets/sunset-dark.webp) | ![Horizon, dark](.github/assets/horizon-dark.webp) | ![Iris, dark](.github/assets/iris-dark.webp) | ![Mirage, dark](.github/assets/mirage-dark.webp) |
 | `sunset` | `horizon` | `iris` | `mirage` |
 
-Sunsets on a warm coast, with a sun, clouds it lights and a sea that mirrors them:
+Sunsets on a warm coast, with a sun, clouds it lights and a sea that mirrors them. Pictures to look at: they ignore the pointer (`cursor: true`, `glow: true` and `click: 'shockwave'` bring it back):
 
 | ![Flamingo](.github/assets/flamingo.webp) | ![Mango](.github/assets/mango.webp) | ![Afterglow](.github/assets/afterglow.webp) |
 | :--: | :--: | :--: |
@@ -312,7 +312,7 @@ Everything is optional. Layers accept `false` (hidden), `true` (shown with the p
 | `nebula` | `intensity` (1), `scale` (1, higher = smaller clouds), `shimmer` (0.22, slow drift towards warm tones) |
 | `mesh` | A gradient mesh: large, vivid fields of color that melt into each other and drift, in both themes. Off unless the preset has one, `mesh: true` turns it on. `layout` (`'diagonal'`, `'horizon'`, `'coast'`, `'bloom'`, `'corners'`, or your own points: `[{ x, y, size }]`, 2 to 6), `intensity` (1, 0 to 1), `softness` (1), `drift` (1, how far the colors wander, 0 holds them), `flow` (1, how much the sky flows and folds), `silk` (0.5, folds of light), `depth` (1, how much night shows between the colors in the dark theme). Its colors are `palette.mesh` |
 | `sun` | Off unless the preset has one. `intensity` (1), `x` (0.5), `y` (0.6, from the top), `size` (0.24, diameter, fraction of the height), `halo` (1) |
-| `clouds` | A deck that recedes to the horizon, lit by the sun. Off unless the preset has it. `intensity` (0.9), `cover` (0.5), `scale` (1, higher = smaller clouds), `speed` (1) |
+| `clouds` | A deck that recedes to the horizon, lit by the sun. Off unless the preset has it. `intensity` (0.9), `cover` (0.5), `scale` (1, higher = smaller clouds), `speed` (1), `towers` (1, height of the cumulus on the horizon) |
 | `sea` | Water that mirrors the mesh, the sun and the clouds. Off unless the preset has it. `level` (0.26, height of the horizon), `waves` (1, 0 = a mirror), `glints` (1) |
 | `daylight` | The light theme's finish, 0 to 2: `contrast` (1, richer, deeper colors in the folds and towards the edges), `sheen` (1, a pearly iridescent band sweeping across), `bokeh` (1, soft discs of light drifting up), `split` (0 to 1, default 0: hot and cold sides, the colors gather on one side of a slowly turning diagonal and the background holds the other). Only drawn while the sky is light |
 | `aurora` | `intensity` (1), `position` (0.7, from 0 = bottom to 1 = top), `height` (1, how far the curtains rise), `curtains` (3, 1 to 5), `waves` (1, 0 = straight bands), `speed` (1, 0 holds them still), `streaks` (1, 0 = smooth), `tilt` (0, -1 to 1, slants them across the screen), `edge` (1, sharpness of the lower edge) |
@@ -459,7 +459,7 @@ flowchart LR
 
 Particles run at 60 fps while the cursor moves and 30 fps at rest (always 60 on `high` and `ultra`). When frames get slow, the adaptive mode lowers the shader resolution down to `minScale`, then its frame rate. A long task on your page (big render, heavy JSON…) makes it back off for two seconds. Nothing renders while the sky is off-screen or the tab is hidden.
 
-Size: 26 kB gzipped for the default entry, worker included. The main-thread engine (14 kB) is only downloaded when a fallback needs it, and the 3D layer (15 kB) when a page shows models.
+Size: 27 kB gzipped for the default entry, worker included. The main-thread engine (15 kB) is only downloaded when a fallback needs it, and the 3D layer (15 kB) when a page shows models.
 
 ## Browser support
 

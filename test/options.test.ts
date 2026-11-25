@@ -172,6 +172,8 @@ describe('sun, clouds and sea', () => {
     expect(s.sun[3]).toBe(1);
     expect(s.clouds[0]).toBeGreaterThan(0);
     expect(s.sea[0]).toBe(0.25);
+    // they ignore the pointer
+    expect([s.glow, s.lens, s.spotlight, s.field, s.parallax, s.click]).toEqual([0, 0, 0, 0, 0, 'none']);
     expect(toEngineConfig(normalizeOptions({ preset: 'flamingo', sea: false })).sea[0]).toBe(0);
   });
 

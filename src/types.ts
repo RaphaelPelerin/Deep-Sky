@@ -142,6 +142,8 @@ export interface CloudsOptions extends Layer {
   scale?: number;
   /** how fast they drift, 0–5 (default 1) */
   speed?: number;
+  /** cumulus towering on the horizon: their height, 0–2 (default 1, 0 = none) */
+  towers?: number;
 }
 
 /** Water along the bottom: it mirrors everything above its horizon */

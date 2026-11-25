@@ -41,7 +41,7 @@ export const defaults: Defaults = {
   nebula: { enabled: true, intensity: 1, scale: 1, shimmer: 0.22 },
   mesh: { enabled: false, intensity: 1, layout: 'diagonal', softness: 1, drift: 1, flow: 1, silk: 0.5, depth: 1 },
   sun: { enabled: false, intensity: 1, x: 0.5, y: 0.6, size: 0.24, halo: 1 },
-  clouds: { enabled: false, intensity: 0.9, cover: 0.5, scale: 1, speed: 1 },
+  clouds: { enabled: false, intensity: 0.9, cover: 0.5, scale: 1, speed: 1, towers: 1 },
   sea: { enabled: false, level: 0.26, waves: 1, glints: 1 },
   daylight: { enabled: true, contrast: 1, sheen: 1, bokeh: 1, split: 0 },
   aurora: {
@@ -391,6 +391,7 @@ export function toEngineConfig(r: ResolvedOptions): EngineConfig {
       clamp(r.clouds.scale, 0.2, 4),
       clamp(r.clouds.speed, 0, 5),
     ],
+    towers: clamp(r.clouds.towers, 0, 2),
     sea: [on(r.sea.enabled, clamp(r.sea.level, 0.05, 0.8)), clamp(r.sea.waves, 0, 3), clamp(r.sea.glints, 0, 3)],
     daylight: [
       on(r.daylight.enabled, clamp(r.daylight.contrast, 0, 2)),
